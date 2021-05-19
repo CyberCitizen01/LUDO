@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LUDO</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Audiowide|Sofia">
+    <link rel="stylesheet" href="../style/ludo.css">
+    <script src='http://localhost:3000/socket.io/socket.io.js'></script>
+</head>
+<body>
+    <div class="navBar">
+        <a href="">HOME</a>
+        <a href="">LUDO</a>
+        <a href="about">ABOUT</a>
+        <h3 id="my-name">&#10024;  </h3>
+    </div>
+
+
+    <div class="heading-tile">
+        <h2>LUDO - A 4 Player Game</h2>
+    </div>
+
+    <div class="gameWrapper">
+        <div class="gameBoard">
+            <img src="../images/1200px-Ludo_board.svg.png" alt="THIS IS AN IMAGE" class="ludoImg" >
+            <canvas class="gameCanvas" id="theCanvas"></canvas>
+        </div>
+        <div class="diceBoard">
+            <div class="msgBoard">
+                <div class="messageFromServer">
+                    <strong>LET US START THE GAME!!!</strong><br>
+                    <div style="align-content: center; margin-top: 20px;">
+                        <button id="i-started-the-game">START</button>
+                    </div>
+                </div>
+            
+            </div>
+            <div class="goButt">
+                <button id="randomButt" style="text-align: right;">GO</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/ludo.js"></script>
+</body>
+</html>
