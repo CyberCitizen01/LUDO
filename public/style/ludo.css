@@ -155,23 +155,6 @@ body {
     box-shadow: 0 12px 16px 0 rgba(0,0,0,0.24), 0 17px 50px 0 rgba(0,0,0,0.19);
 }
 
-#i-started-the-game {
-    display: none;
-    background-image: linear-gradient(to bottom right, red, yellow);
-    color: white;
-    font-size: 20px;
-    padding: 2px 20px;
-    border-radius: 6px;
-    transition-duration: 0.4s;
-    box-shadow: 0 6px 8px 0 rgba(0,0,0,0.14), 0 17px 50px 0 rgba(0,0,0,0.09);
-}
-
-#i-started-the-game:hover {
-    border: 1px solid white;
-    cursor: pointer;
-    box-shadow: 0 12px 16px 0 rgba(0,0,0,0.24), 0 17px 50px 0 rgba(0,0,0,0.19);
-}
-
 .message {
     font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
 }
