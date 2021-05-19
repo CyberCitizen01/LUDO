@@ -41,8 +41,9 @@ nsp.on('connection',(socket)=>{
         }
     });
 
-    socket.on('disconnect',(data)=>{
-        console.log(data);
+    socket.on('disconnect',()=>{
+        console.log('That client just got disconnected-',socket.id);
+        deleteThisid(socket);
         //delete rooms[data.room][data.id];
     });
     // nsp.on('random',(data,cb)=>{
@@ -80,11 +81,11 @@ app.get('/ludo', (req,res)=>{
 
 app.get('/ludo/:ROOMCODE', (req,res)=>{
     console.log(req.params.ROOMCODE,req.query);
-    if(Object.keys(rooms).includes(req.params.ROOMCODE) ){
+    if(Object.keys(rooms).includes(req.params.ROOMCODE) && Object.keys(req.query).length===0  &&  Object.keys(rooms[req.params.ROOMCODE]).length <= 4){
         res.sendFile('ludo.html', { root: publicPath + '/html' });
     } else{
         res.statusCode = 404;
-        res.end('404!\nThis is not a valid Code, Go to home and create a room!');
+        res.end('404!:(\nThis is either not a valid Room Code or The room is filled up, Go to home and create a room!');
     }
 });
 
@@ -112,4 +113,13 @@ function generate_member_id(socket,data){
     rooms[data][member_id] = socket.id;
     return member_id;
     } else{generate_member_id(socket)}
+}
+
+function deleteThisid(socket){
+    for(var roomcd in rooms){
+        if(rooms.hasOwnProperty(roomcd)){
+            ky = Object.keys(rooms[roomcd]).find( key => rooms[roomcd][key] === socket.id);
+            delete rooms[roomcd][ky];
+        }
+    }
 }
