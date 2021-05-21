@@ -1,17 +1,18 @@
 let socket = io(window.location.href.substring(0,window.location.href.length-7));
 
+const room_code = window.location.href.substring(window.location.href.length-6);
+const USERNAMES = ['Green Warrior', 'Yellow Rhino', 'Blue Fox', 'Red Fire'];
+const PIECES = [];
+const PLAYERS = {};
+const colors = ["green","yellow","blue","red"];
+let MYROOM = [];
+let myid = -1;
+let chance = -1;
+
 var canvas = document.getElementById('theCanvas');
 var ctx = canvas.getContext('2d');
 canvas.height = 750;
 canvas.width = 750;
-
-const room_code = window.location.href.substring(window.location.href.length-6);
-const USERNAMES = ['Green Warrior', 'Yellow Rhino', 'Blue Fox', 'Red Fire'];
-const MYROOM = [];
-const PIECES = [];
-const PLAYERS = [];
-const colors = ["green","yellow","blue","red"];
-let myid = -1;
 
 let allPiecesePos = {
     0:[{x: 72,y:123.5},{x:122,y: 73.5},{x:172,y:123.5},{x:122,y:173.5}],
@@ -20,12 +21,19 @@ let allPiecesePos = {
     3:[{x:522,y:123.5},{x:572,y: 73.5},{x:622,y:123.5},{x:572,y:173.5}]
 }
 
+let homeTilePos = {
+    0:{x: 50,y:300},
+    1:{x:300,y:650},
+    2:{x:650,y:400},
+    3:{x:400,y:50}
+}
+
 class Player{
     constructor(id){
         this.id = id;
-        this.myPieces = new Array();
+        this.myPieces = new Object();
         for(let i=0;i<4;i++){
-            this.myPieces.push(new Piece(i,this.id));
+            this.myPieces[i] = new Piece(i,this.id);
         }        
     }
     draw(){
@@ -37,34 +45,45 @@ class Player{
 
 class Piece{
     constructor(i,id){
-        this.parrentid = id;
+        this.color_id = id;
         this.Pid = i;
-        this.x = allPiecesePos[this.parrentid][this.Pid].x;
-        this.y = allPiecesePos[this.parrentid][this.Pid].y;
-        this.image = PIECES[this.parrentid];
+        this.x = allPiecesePos[this.color_id][this.Pid].x;
+        this.y = allPiecesePos[this.color_id][this.Pid].y;
+        this.image = PIECES[this.color_id];
     }
 
     draw(){
-        ctx.drawImage(this.image, this.x, this.y);
+        ctx.drawImage(this.image, this.x, this.y, 50, 50);
+    }
+
+    update(data){
+        this.x = data.x;
+        this.y = data.y;
     }
 }
 
 socket.on('connect',function(){
     console.log('You are connected to the server!!');
-    // socket.emit('testestest',room_code,function(){console.log('test is ok on client!');});
+
     socket.on('imposter',()=>{window.location.replace("/error-imposter");});
+
     socket.emit('fetch',room_code,function(data,id){
-        console.log('hihello');
-        for(let i=0;i<data.length;i++){
-            MYROOM.push(data[i]);
-        }
-        myid = id;console.log('this is my id',myid);
+        MYROOM = data;
+        myid = id;
         StartTheGame();
     });
-    //socket.on('H',(data,cb)=>{console.log(data);cb()})
+
 //To simulate dice
-    //diceAction();
+    document.querySelector('#randomButt').addEventListener('click',(event)=>{
+        event.preventDefault();
+        diceAction();
+    });
     
+    socket.on('is-it-your-chance',function(data){
+        if(data===myid){
+            styleButton(1);
+        }
+    });
 
     socket.on('new-user-joined',function(data){
         MYROOM.push(data.id);
@@ -72,16 +91,10 @@ socket.on('connect',function(){
         outputMessage(USERNAMES[data.id],0);
     });
 
-//When someone joins the game
-    socket.on('messageFromAdmin',function(data){
-        outputMessage(data,0);
-    })
-
-//When some other user throws the dice
-    socket.on("otherUsersData",function(data){
-        outputMessage(data,1)
-        styleButton(1);
-    })
+    socket.on('Thrown-dice',function(data){
+        outputMessage({Name:USERNAMES[data.id],Num:data.Num},1);
+        gameLogicHandler(data.Num,data.id);
+    });
 });
 
 
@@ -123,23 +136,23 @@ function styleButton(k){
     }
 }
 
+//simulates the action of dice and also chance rotation.
 function diceAction(){
-    styleButton(1);
-    document.querySelector('#randomButt').addEventListener('click', function(event){
-        event.preventDefault();
-        console.log('clicked Random Button');
-        let myTurn = {
-            room: room_code,
-            Name: USERNAMES[myid],                      //need to 
-            Num: Math.floor((Math.random() * 6) + 1)    //make changes here!!
-        }
-        socket.emit('random',myTurn, function(){
-            outputMessage({Name: 'you', Num:myTurn.Num},1);
-            styleButton(0);
-        });
+    console.log('clicked Random Button');
+    let myTurn = {
+        room: room_code,
+        id: myid
+    }
+    socket.emit('random',myTurn, function(data){
+        outputMessage({Name: 'you', Num:data},1);
+        styleButton(0);
+        gameLogicHandler(data,myid);
+        socket.emit('chance',{room: room_code, nxt_id: chanceRotation(myid)});
     });
+
 }
 
+//Initialise the game with the one who created the room.
 function StartTheGame(){
     MYROOM.forEach(function(numb){
         numb==myid?outputMessage('You',0):outputMessage(USERNAMES[numb],0)
@@ -147,12 +160,14 @@ function StartTheGame(){
     document.getElementById('my-name').innerHTML += USERNAMES[myid];console.log(myid);
     if(MYROOM.length === 1){
         styleButton(1);
+        chance = myid;
     }else{
         styleButton(0);
     }
     loadAllPieces();
 }
 
+//Load all the images of the pieces
 function loadAllPieces(){
     let cnt = 0;
     for(let i=0;i<colors.length;i++){
@@ -163,7 +178,7 @@ function loadAllPieces(){
             if(cnt >= colors.length){
                 //all images are loaded
                 for(let j=0;j<MYROOM.length;j++){
-                    PLAYERS.push(new Player(MYROOM[j]));
+                    PLAYERS[MYROOM[j]] = new Player(MYROOM[j]);
                 }
                 allPlayerHandler();
             }
@@ -172,6 +187,7 @@ function loadAllPieces(){
     }
 }
 
+//rotate chance, required for the game
 function chanceRotation(id){
     if(id+1 >= 4){
         return 0;
@@ -180,19 +196,24 @@ function chanceRotation(id){
     }
 }
 
+//This is the function that actually draws 4 x 4 = 16 pieces per call
 function allPlayerHandler(){
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    for(let i=0;i<PLAYERS.length;i++){
-        PLAYERS[i].draw();
+    for(let i=0;i<Object.keys(PLAYERS).length;i++){
+        PLAYERS[MYROOM[i]].draw();
     }
 }
 
+//It is not required, to just decrease the crowding in sockets' codeblock.
 function loadNewPiece(id){
-    //Yeah load some new pieces bruuh!!
-    let img = new Image();
-    img.src = "../images/pieces/"+colors[id]+".png";
-    img.onload = ()=>{
-        PLAYERS.push(new Player(id));
+    PLAYERS[id] = new Player(id);
+    allPlayerHandler();
+}
+
+//Plan is to make this as the root of the game Logic
+function gameLogicHandler(move,id){
+    if(move === 6){
+        PLAYERS[id].myPieces[0].update(homeTilePos[id]);
         allPlayerHandler();
     }
 }
