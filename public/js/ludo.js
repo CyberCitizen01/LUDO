@@ -5,19 +5,6 @@ var ctx = canvas.getContext('2d');
 canvas.height = 750;
 canvas.width = 750;
 
-// var greenPiece = new Image(); greenPiece.src = "../images/pieces/green.png"
-// var bluePiece = new Image(); bluePiece.src = "../images/pieces/blue.png"
-// var redPiece = new Image(); redPiece.src = "../images/pieces/red.png"
-// var yellowPiece = new Image(); yellowPiece.src = "../images/pieces/yellow.png"
-
-// greenPiece.onload = ()=>{
-//     ctx.drawImage(greenPiece, 72, 123.5);
-//     ctx.drawImage(greenPiece, 122, 173.5);
-//     ctx.drawImage(greenPiece, 122, 73.5);
-//     ctx.drawImage(greenPiece, 172, 123.5);
-// }
-
-//context.clearRect(0, 0, canvas.width, canvas.height);
 const room_code = window.location.href.substring(window.location.href.length-6);
 const USERNAMES = ['Green Warrior', 'Yellow Rhino', 'Blue Fox', 'Red Fire'];
 const MYROOM = [];
@@ -38,7 +25,7 @@ class Player{
         this.id = id;
         this.myPieces = new Array();
         for(let i=0;i<4;i++){
-            this.myPieces.push(new Piece(i,this.id))
+            this.myPieces.push(new Piece(i,this.id));
         }        
     }
     draw(){
@@ -50,10 +37,11 @@ class Player{
 
 class Piece{
     constructor(i,id){
-        this.parrentid = id
-        this.x = allPiecesePos[this.parrentid][i].x
-        this.y = allPiecesePos[this.parrentid][i].y
-        this.image = PIECES[id]
+        this.parrentid = id;
+        this.Pid = i;
+        this.x = allPiecesePos[this.parrentid][this.Pid].x;
+        this.y = allPiecesePos[this.parrentid][this.Pid].y;
+        this.image = PIECES[this.parrentid];
     }
 
     draw(){
@@ -64,13 +52,13 @@ class Piece{
 socket.on('connect',function(){
     console.log('You are connected to the server!!');
     // socket.emit('testestest',room_code,function(){console.log('test is ok on client!');});
-    socket.on('refresh',()=>{location.reload()});
+    socket.on('imposter',()=>{window.location.replace("/error-imposter");});
     socket.emit('fetch',room_code,function(data,id){
         console.log('hihello');
         for(let i=0;i<data.length;i++){
             MYROOM.push(data[i]);
         }
-        myid = id;
+        myid = id;console.log('this is my id',myid);
         StartTheGame();
     });
     //socket.on('H',(data,cb)=>{console.log(data);cb()})
@@ -156,7 +144,7 @@ function StartTheGame(){
     MYROOM.forEach(function(numb){
         numb==myid?outputMessage('You',0):outputMessage(USERNAMES[numb],0)
     });
-    document.getElementById('my-name').innerHTML += USERNAMES[myid]
+    document.getElementById('my-name').innerHTML += USERNAMES[myid];console.log(myid);
     if(MYROOM.length === 1){
         styleButton(1);
     }else{
@@ -193,6 +181,7 @@ function chanceRotation(id){
 }
 
 function allPlayerHandler(){
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
     for(let i=0;i<PLAYERS.length;i++){
         PLAYERS[i].draw();
     }
