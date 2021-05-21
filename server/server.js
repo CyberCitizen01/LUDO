@@ -29,13 +29,17 @@ nsp.on('connection',(socket)=>{
             console.log(rooms);
             socket.join(data);
             //console.log(socket);
-            cb(Object.keys(rooms[data]),member_id);
-            socket.to(data).emit('new-user-joined',{id:member_id});
+            if(member_id !== -1){
+                cb(Object.keys(rooms[data]),member_id);
+                socket.to(data).emit('new-user-joined',{id:member_id});
+            }else{
+                console.log('There is someone with m_id = -1');
+            }
         }
         catch(err){
             console.log(rooms);
             if(err.name === 'TypeError'){
-                socket.emit('refresh');
+                socket.emit('imposter');
             }
             console.log("hello",err);
         }
@@ -81,7 +85,7 @@ app.get('/ludo', (req,res)=>{
 
 app.get('/ludo/:ROOMCODE', (req,res)=>{
     console.log(req.params.ROOMCODE,req.query);
-    if(Object.keys(rooms).includes(req.params.ROOMCODE) && Object.keys(req.query).length===0  &&  Object.keys(rooms[req.params.ROOMCODE]).length <= 4){
+    if(Object.keys(rooms).includes(req.params.ROOMCODE) && Object.keys(req.query).length===0  &&  Object.keys(rooms[req.params.ROOMCODE]).length <= 3){
         res.sendFile('ludo.html', { root: publicPath + '/html' });
     } else{
         res.statusCode = 404;
@@ -106,13 +110,16 @@ function randomPath(){
     } else{ randomPath(); }
 };
 
-function generate_member_id(socket,data){
-    let member_id = -1;
-    member_id = Math.floor((Math.random()*4))
-    if(!rooms[data][member_id]){
-    rooms[data][member_id] = socket.id;
-    return member_id;
-    } else{generate_member_id(socket)}
+function generate_member_id(s_id,rc){
+    let m_id = Math.floor(Math.random()*4);
+    let m_r = Object.keys(rooms[rc]);
+    if(m_r.length <= 4){
+        if(m_r.includes(m_id.toString())){
+            return generate_member_id(s_id,rc)
+        }
+    } else{
+        return -1;
+    }
 }
 
 function deleteThisid(socket){
