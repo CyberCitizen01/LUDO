@@ -8,6 +8,12 @@ A multi-player LUDO game, made with `node.js`, `socket.io` and `Vanilla Javascri
 > git clone https://github.com/CyberCitizen01/LUDO/
 > ```
 
+- Install the dependencies.
+
+> ```sh
+> npm install
+> ```
+
 - Start the node server.
 
 > ```sh
