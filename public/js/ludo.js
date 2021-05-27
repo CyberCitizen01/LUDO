@@ -1,13 +1,15 @@
 let socket = io(window.location.href.substring(0,window.location.href.length-7));
 
 const room_code = window.location.href.substring(window.location.href.length-6);
-const USERNAMES = ['Green Warrior', 'Yellow Rhino', 'Blue Fox', 'Red Fire'];
+const USERNAMES = ['Green Warrior', 'Red Fire', 'Blue Fox', 'Yellow Rhino'];
 const PIECES = [];
 const PLAYERS = {};
-const colors = ["green","yellow","blue","red"];
+const colors = ["green","red","blue","yellow"];
 let MYROOM = [];
 let myid = -1;
 let chance = -1;
+// let status = 0;
+// let sum = 0;
 
 var canvas = document.getElementById('theCanvas');
 var ctx = canvas.getContext('2d');
@@ -16,16 +18,16 @@ canvas.width = 750;
 
 let allPiecesePos = {
     0:[{x: 72,y:123.5},{x:122,y: 73.5},{x:172,y:123.5},{x:122,y:173.5}],
-    1:[{x: 72,y:573.5},{x:122,y:523.5},{x:172,y:573.5},{x:122,y:623.5}],
+    1:[{x:522,y:123.5},{x:572,y: 73.5},{x:622,y:123.5},{x:572,y:173.5}],
     2:[{x:522,y:573.5},{x:572,y:523.5},{x:622,y:573.5},{x:572,y:623.5}],
-    3:[{x:522,y:123.5},{x:572,y: 73.5},{x:622,y:123.5},{x:572,y:173.5}]
+    3:[{x: 72,y:573.5},{x:122,y:523.5},{x:172,y:573.5},{x:122,y:623.5}]
 }
 
 let homeTilePos = {
     0:{x: 50,y:300},
-    1:{x:300,y:650},
+    1:{x:400,y: 50},
     2:{x:650,y:400},
-    3:{x:400,y:50}
+    3:{x:300,y:650}
 }
 
 class Player{
@@ -47,6 +49,9 @@ class Piece{
     constructor(i,id){
         this.color_id = id;
         this.Pid = i;
+        this.status = 0;
+        this.sum = 0;
+        // this.slope = -2;
         this.x = allPiecesePos[this.color_id][this.Pid].x;
         this.y = allPiecesePos[this.color_id][this.Pid].y;
         this.image = PIECES[this.color_id];
@@ -54,18 +59,39 @@ class Piece{
 
     draw(){
         ctx.drawImage(this.image, this.x, this.y, 50, 50);
+        //this.slope = (allPiecesePos[this.color_id][this.Pid].y - this.y)/(allPiecesePos[this.color_id][this.Pid].x - this.x);
     }
 
     update(data){
-        this.x = data.x;
-        this.y = data.y;
+        let xy = this.handleLogic(data)
+        this.x = xy.x;
+        this.y = xy.y;
+    }
+
+    handleLogic(data){
+        let xy_ = {x:this.x,y:this.y};
+        console.log(this.x,this.y,this.status,data.status);
+        if(this.status === 0 && data.status === 1){
+            this.status = data.status;
+            this.sum = data.sum;
+            return homeTilePos[this.color_id];
+        }else if(this.status === 1 && data.status != 2){
+            console.log('kamkarja',data.sum,this.sum,data.sum - this.sum);
+            if(this.color_id == 0){xy_.x = this.x + (data.sum - this.sum)*50};
+            if(this.color_id == 2){xy_.x = this.x - (data.sum - this.sum)*50};
+            if(this.color_id == 1){xy_.y = this.y + (data.sum - this.sum)*50};
+            if(this.color_id == 3){xy_.y = this.y - (data.sum - this.sum)*50};
+            this.status = data.status;
+            this.sum = data.sum;
+            console.log(xy_,this.status,this.sum);
+            return xy_;
+        }
+        return xy_
     }
 }
 
 socket.on('connect',function(){
     console.log('You are connected to the server!!');
-
-    socket.on('imposter',()=>{window.location.replace("/error-imposter");});
 
     socket.emit('fetch',room_code,function(data,id){
         MYROOM = data;
@@ -74,15 +100,21 @@ socket.on('connect',function(){
     });
 
 //To simulate dice
-    document.querySelector('#randomButt').addEventListener('click',(event)=>{
+    if(chance === myid){    
+        document.querySelector('#randomButt').addEventListener('click',(event)=>{
         event.preventDefault();
+        console.log('chance is working');
         diceAction();
-    });
+        });
+    }
     
+    socket.on('imposter',()=>{window.location.replace("/error-imposter");});
+
     socket.on('is-it-your-chance',function(data){
         if(data===myid){
             styleButton(1);
         }
+        chance = data;
     });
 
     socket.on('new-user-joined',function(data){
@@ -91,10 +123,14 @@ socket.on('connect',function(){
         outputMessage(USERNAMES[data.id],0);
     });
 
-    socket.on('Thrown-dice',function(data){
-        outputMessage({Name:USERNAMES[data.id],Num:data.Num},1);
-        gameLogicHandler(data.Num,data.id);
+    socket.on('Thrown-dice',async function(data){
+        console.log(data);
+        data.id != myid?outputMessage({Name:USERNAMES[data.id],Num:data.Num},1):outputMessage({Name: 'you', Num:data.Num},1);
+        await PLAYERS[data.id].myPieces[data.statusSumPid.Pid].update({status:data.statusSumPid.status, sum:data.statusSumPid.sum});
+        allPlayerHandler();
     });
+
+    socket.emit('test','kya hal h bhidu',function(data){console.log(data);},function(data){console.log(data);})    
 });
 
 
@@ -141,13 +177,13 @@ function diceAction(){
     console.log('clicked Random Button');
     let myTurn = {
         room: room_code,
-        id: myid
+        id: myid,
+        statusSumPid: statusChecker(myid)
     }
     socket.emit('random',myTurn, function(data){
-        outputMessage({Name: 'you', Num:data},1);
         styleButton(0);
-        gameLogicHandler(data,myid);
-        socket.emit('chance',{room: room_code, nxt_id: chanceRotation(myid)});
+        console.log('random acknowledged');
+        socket.emit('chance',{room: room_code, nxt_id: chanceRotation(myid,data)});
     });
 
 }
@@ -188,12 +224,15 @@ function loadAllPieces(){
 }
 
 //rotate chance, required for the game
-function chanceRotation(id){
-    if(id+1 >= 4){
-        return 0;
-    }else{
-        return id+1
-    }
+function chanceRotation(id,temp){
+    if(temp != 6){
+        if(id+1 >= 4){
+            return 0;
+        }else{
+            return id+1;
+        }
+    }else{return id}
+
 }
 
 //This is the function that actually draws 4 x 4 = 16 pieces per call
@@ -211,9 +250,19 @@ function loadNewPiece(id){
 }
 
 //Plan is to make this as the root of the game Logic
-function gameLogicHandler(move,id){
-    if(move === 6){
-        PLAYERS[id].myPieces[0].update(homeTilePos[id]);
-        allPlayerHandler();
+// function gameLogicHandlerC(playerObj){
+//     if(playerObj.statusSumPid.status === 1){
+//         // PLAYERS[playerObj.id].myPieces[playerObj.statusSumPid.Pid].update(homeTilePos[id]);
+//         allPlayerHandler();
+//     }
+// }
+
+function statusChecker(id){
+    for(let i = 0;i<4;i++){
+        if(PLAYERS[id].myPieces[i].sum != 62){
+            let k = {status:PLAYERS[id].myPieces[i].status, sum:PLAYERS[id].myPieces[i].sum, Pid:i};
+            console.log('sending...',k);
+            return k;
+        }
     }
 }
