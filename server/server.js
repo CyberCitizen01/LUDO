@@ -5,7 +5,10 @@ const socketIO = require('socket.io');
 
 const app = express();
 const server = http.createServer(app);
-const io = socketIO(server);
+const io = socketIO(server, {
+    cors: {
+      origin: '*'
+    }});
 
 const publicPath = path.join(__dirname, '../public');
 const port = process.env.PORT || 3000;
@@ -13,10 +16,8 @@ const port = process.env.PORT || 3000;
 app.use(express.static(publicPath));
 app.use(express.urlencoded({ extended: true }));
 
-let USERNAMES = ['Green Warrior', 'Yellow Rhino', 'Blue Fox', 'Red Fire'];
 let rooms = {};
 let messages = {};
-const changeDirection = [6,10,16,18,24,29,31,37,42,44,50,55,56,62];
 
 
 //
@@ -50,15 +51,9 @@ nsp.on('connection',(socket)=>{
     });
 
     socket.on('random',(data,cb)=>{
-        let temp = Math.floor((Math.random()*6) + 1);
-        gameLogicHandlerS(socket,data,temp);
-        // nsp.to(data.room).emit('Thrown-dice', {id:data.id, Num:temp, Pid: data.statusPid.Pid});
-        cb(temp);
-    });
-
-    socket.on('test',(data,cb)=>{
-        console.log(data);
-        console.log(cb);
+        data['num'] = Math.floor((Math.random()*6) + 1);
+        nsp.to(data.room).emit('Thrown-dice', data);
+        cb(data['num']);
     });
 
     socket.on('disconnect',()=>{
@@ -156,27 +151,10 @@ function deleteThisid(id){
     }
 }
 
-function gameLogicHandlerS(socket,playerObj,numb){
-    playerObj.statusSumPid.sum += numb;
-    playerObj['Num'] = numb;
-
-    if(playerObj.statusSumPid.status === 0 && playerObj.statusSumPid.sum === changeDirection[playerObj.statusSumPid.status] && playerObj.statusSumPid.sum - numb === 0){
-        playerObj.statusSumPid.status += 1;
-    }else{
-        for(let i=1;i<=14;i++){    
-            if(playerObj.statusSumPid.status === i && playerObj.statusSumPid.sum === changeDirection[playerObj.statusSumPid.status]){
-                playerObj.statusSumPid.status += 1;
-                break;
-            }
-        }
-    }
-    nsp.to(playerObj.room).emit('Thrown-dice',playerObj);
-}
+// data = numb;
 // playerObj ={
 //     room: room_code,
 //     id: myid,
-//     statusSumPid: {status:0,sum:0,Pid:0},
-//     Num: temp
+//     pid: pid,
+//     num: temp
 // }
-
-// data = {status:1,sum:6}
