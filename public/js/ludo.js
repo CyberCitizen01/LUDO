@@ -3,13 +3,11 @@ let socket = io(window.location.href.substring(0,window.location.href.length-7))
 const room_code = window.location.href.substring(window.location.href.length-6);
 const USERNAMES = ['Green Warrior', 'Red Fire', 'Blue Fox', 'Yellow Rhino'];
 const PIECES = [];
-const PLAYERS = {};
 const colors = ["green","red","blue","yellow"];
 let MYROOM = [];
 let myid = -1;
 let chance = -1;
-// let status = 0;
-// let sum = 0;
+var PLAYERS = {};
 
 var canvas = document.getElementById('theCanvas');
 var ctx = canvas.getContext('2d');
@@ -32,10 +30,10 @@ let homeTilePos = {
 
 class Player{
     constructor(id){
-        this.id = id;
+        this.id = String(id);
         this.myPieces = new Object();
         for(let i=0;i<4;i++){
-            this.myPieces[i] = new Piece(i,this.id);
+            this.myPieces[i] = new Piece(String(i),String(id));
         }        
     }
     draw(){
@@ -47,46 +45,155 @@ class Player{
 
 class Piece{
     constructor(i,id){
-        this.color_id = id;
-        this.Pid = i;
-        this.status = 0;
-        this.sum = 0;
-        // this.slope = -2;
-        this.x = allPiecesePos[this.color_id][this.Pid].x;
-        this.y = allPiecesePos[this.color_id][this.Pid].y;
+        this.path = [];
+        this.color_id = String(id);
+        console.log(this.color_id,typeof(this.color_id));
+        this.Pid = String(i);
+        this.pos = -1;
+        this.x = parseInt(allPiecesePos[this.color_id][this.Pid].x);
+        this.y = parseInt(allPiecesePos[this.color_id][this.Pid].y);
         this.image = PIECES[this.color_id];
+        switch(id){
+            case '0':
+                console.log('switch is working');
+                for(let i=0;i<4;i++){this.path.push(this.oneStepToRight)}
+                this.path.push(this.oneStepTowards45);
+                for(let i=0;i<5;i++){this.path.push(this.oneStepToTop)}
+                for(let i=0;i<2;i++){this.path.push(this.oneStepToRight)}
+                for(let i=0;i<5;i++){this.path.push(this.oneStepToBottom)}
+                this.path.push(this.oneStepTowards315)
+                for(let i=0;i<5;i++){this.path.push(this.oneStepToRight)}
+                for(let i=0;i<2;i++){this.path.push(this.oneStepToBottom)}
+                for(let i=0;i<5;i++){this.path.push(this.oneStepToLeft)}
+                this.path.push(this.oneStepTowards225)
+                for(let i=0;i<5;i++){this.path.push(this.oneStepToBottom)}
+                for(let i=0;i<2;i++){this.path.push(this.oneStepToLeft)}
+                for(let i=0;i<5;i++){this.path.push(this.oneStepToTop)}
+                this.path.push(this.oneStepTowards135)
+                for(let i=0;i<5;i++){this.path.push(this.oneStepToLeft)}
+                this.path.push(this.oneStepToTop)
+                for(let i=0;i<6;i++){this.path.push(this.oneStepToRight)}
+                break;
+            case '1':
+                for(let i=0;i<4;i++){this.path.push(this.oneStepToBottom)}
+                this.path.push(this.oneStepTowards315)
+                for(let i=0;i<5;i++){this.path.push(this.oneStepToRight)}
+                for(let i=0;i<2;i++){this.path.push(this.oneStepToBottom)}
+                for(let i=0;i<5;i++){this.path.push(this.oneStepToLeft)}
+                this.path.push(this.oneStepTowards225)
+                for(let i=0;i<5;i++){this.path.push(this.oneStepToBottom)}
+                for(let i=0;i<2;i++){this.path.push(this.oneStepToLeft)}
+                for(let i=0;i<5;i++){this.path.push(this.oneStepToTop)}
+                this.path.push(this.oneStepTowards135)
+                for(let i=0;i<5;i++){this.path.push(this.oneStepToLeft)}
+                for(let i=0;i<2;i++){this.path.push(this.oneStepToTop)}
+                for(let i=0;i<5;i++){this.path.push(this.oneStepToRight)}
+                this.path.push(this.oneStepTowards45);
+                for(let i=0;i<5;i++){this.path.push(this.oneStepToTop)}
+                this.path.push(this.oneStepToRight)
+                for(let i=0;i<6;i++){this.path.push(this.oneStepToBottom)}
+                break;
+            case '2':
+                for(let i=0;i<4;i++){this.path.push(this.oneStepToLeft)}
+                this.path.push(this.oneStepTowards225)
+                for(let i=0;i<5;i++){this.path.push(this.oneStepToBottom)}
+                for(let i=0;i<2;i++){this.path.push(this.oneStepToLeft)}
+                for(let i=0;i<5;i++){this.path.push(this.oneStepToTop)}
+                this.path.push(this.oneStepTowards135)
+                for(let i=0;i<5;i++){this.path.push(this.oneStepToLeft)}
+                for(let i=0;i<2;i++){this.path.push(this.oneStepToTop)}
+                for(let i=0;i<5;i++){this.path.push(this.oneStepToRight)}
+                this.path.push(this.oneStepTowards45);
+                for(let i=0;i<5;i++){this.path.push(this.oneStepToTop)}
+                for(let i=0;i<2;i++){this.path.push(this.oneStepToRight)}
+                for(let i=0;i<5;i++){this.path.push(this.oneStepToBottom)}
+                this.path.push(this.oneStepTowards315)
+                for(let i=0;i<5;i++){this.path.push(this.oneStepToRight)}
+                this.path.push(this.oneStepToBottom)
+                for(let i=0;i<6;i++){this.path.push(this.oneStepToLeft)}
+                break;
+            case '3':
+                for(let i=0;i<4;i++){this.path.push(this.oneStepToTop)}
+                this.path.push(this.oneStepTowards135)
+                for(let i=0;i<5;i++){this.path.push(this.oneStepToLeft)}
+                for(let i=0;i<2;i++){this.path.push(this.oneStepToTop)}
+                for(let i=0;i<5;i++){this.path.push(this.oneStepToRight)}
+                this.path.push(this.oneStepTowards45);
+                for(let i=0;i<5;i++){this.path.push(this.oneStepToTop)}
+                for(let i=0;i<2;i++){this.path.push(this.oneStepToRight)}
+                for(let i=0;i<5;i++){this.path.push(this.oneStepToBottom)}
+                this.path.push(this.oneStepTowards315)
+                for(let i=0;i<5;i++){this.path.push(this.oneStepToRight)}
+                for(let i=0;i<2;i++)this.path.push(this.oneStepToBottom)
+                for(let i=0;i<5;i++){this.path.push(this.oneStepToLeft)}
+                this.path.push(this.oneStepTowards225)
+                for(let i=0;i<5;i++){this.path.push(this.oneStepToBottom)}
+                this.path.push(this.oneStepToLeft)
+                for(let i=0;i<6;i++){this.path.push(this.oneStepToTop)}
+                break;
+        }
     }
 
     draw(){
         ctx.drawImage(this.image, this.x, this.y, 50, 50);
-        //this.slope = (allPiecesePos[this.color_id][this.Pid].y - this.y)/(allPiecesePos[this.color_id][this.Pid].x - this.x);
     }
 
     update(data){
-        let xy = this.handleLogic(data)
-        this.x = xy.x;
-        this.y = xy.y;
+        if(this.pos != -1){
+            for(let i=this.pos;i<this.pos+data;i++){
+                this.path[i](this.color_id,this.Pid);console.log('hemilo selmon')
+            }
+            this.pos += data;
+
+        }else if(data == 6){
+            this.x = homeTilePos[this.color_id].x
+            this.y = homeTilePos[this.color_id].y
+            this.pos = 0;
+        }
     }
 
-    handleLogic(data){
-        let xy_ = {x:this.x,y:this.y};
-        console.log(this.x,this.y,this.status,data.status);
-        if(this.status === 0 && data.status === 1){
-            this.status = data.status;
-            this.sum = data.sum;
-            return homeTilePos[this.color_id];
-        }else if(this.status === 1 && data.status != 2){
-            console.log('kamkarja',data.sum,this.sum,data.sum - this.sum);
-            if(this.color_id == 0){xy_.x = this.x + (data.sum - this.sum)*50};
-            if(this.color_id == 2){xy_.x = this.x - (data.sum - this.sum)*50};
-            if(this.color_id == 1){xy_.y = this.y + (data.sum - this.sum)*50};
-            if(this.color_id == 3){xy_.y = this.y - (data.sum - this.sum)*50};
-            this.status = data.status;
-            this.sum = data.sum;
-            console.log(xy_,this.status,this.sum);
-            return xy_;
-        }
-        return xy_
+    oneStepToRight(id,pid){
+        window.PLAYERS[id].myPieces[pid].x += 50;
+        console.log('to r',this.x,this.y,typeof(this.x),typeof(this.y));
+    }
+
+    oneStepToLeft(id,pid){
+        window.PLAYERS[id].myPieces[pid].x -= 50;
+        console.log('to l',this.x,this.y,typeof(this.x),typeof(this.y));
+    }
+
+    oneStepToTop(id,pid){
+        window.PLAYERS[id].myPieces[pid].y -= 50;
+        console.log('to t',this.x,this.y,typeof(this.x),typeof(this.y));
+    }
+
+    oneStepToBottom(id,pid){
+        window.PLAYERS[id].myPieces[pid].y += 50;
+        console.log('to b',this.x,this.y,typeof(this.x),typeof(this.y));
+    }
+
+    oneStepTowards45(id,pid){
+        window.PLAYERS[id].myPieces[pid].x += 50;
+        window.PLAYERS[id].myPieces[pid].y -= 50;
+        console.log('to 45',this.x,this.y,typeof(this.x),typeof(this.y));
+    }
+
+    oneStepTowards135(id,pid){
+        window.PLAYERS[id].myPieces[pid].x -= 50;
+        window.PLAYERS[id].myPieces[pid].y -= 50;
+        console.log('to 135',this.x,this.y,typeof(this.x),typeof(this.y));
+    }
+
+    oneStepTowards225(id,pid){
+        window.PLAYERS[id].myPieces[pid].x -= 50;
+        window.PLAYERS[id].myPieces[pid].y += 50;
+        console.log('to 225',this.x,this.y,typeof(this.x),typeof(this.y));
+    }
+
+    oneStepTowards315(id,pid){
+        window.PLAYERS[id].myPieces[pid].x += 50;
+        window.PLAYERS[id].myPieces[pid].y += 50;
+        console.log('to 315',this.x,this.y,typeof(this.x),typeof(this.y));
     }
 }
 
@@ -125,12 +232,11 @@ socket.on('connect',function(){
 
     socket.on('Thrown-dice',async function(data){
         console.log(data);
-        data.id != myid?outputMessage({Name:USERNAMES[data.id],Num:data.Num},1):outputMessage({Name: 'you', Num:data.Num},1);
-        await PLAYERS[data.id].myPieces[data.statusSumPid.Pid].update({status:data.statusSumPid.status, sum:data.statusSumPid.sum});
+        data.id != myid?outputMessage({Name:USERNAMES[data.id],Num:data.num},1):outputMessage({Name: 'you', Num:data.num},1);
+        await PLAYERS[data.id].myPieces[data.pid].update(data.num);
         allPlayerHandler();
     });
 
-    socket.emit('test','kya hal h bhidu',function(data){console.log(data);},function(data){console.log(data);})    
 });
 
 
@@ -178,7 +284,7 @@ function diceAction(){
     let myTurn = {
         room: room_code,
         id: myid,
-        statusSumPid: statusChecker(myid)
+        pid: whichPiece(myid)
     }
     socket.emit('random',myTurn, function(data){
         styleButton(0);
@@ -257,12 +363,11 @@ function loadNewPiece(id){
 //     }
 // }
 
-function statusChecker(id){
+function whichPiece(id){
+    //rubbish
     for(let i = 0;i<4;i++){
-        if(PLAYERS[id].myPieces[i].sum != 62){
-            let k = {status:PLAYERS[id].myPieces[i].status, sum:PLAYERS[id].myPieces[i].sum, Pid:i};
-            console.log('sending...',k);
-            return k;
+        if(PLAYERS[id].myPieces[i].pos != 57){
+            return i;
         }
     }
 }
