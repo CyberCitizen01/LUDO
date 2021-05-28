@@ -349,20 +349,13 @@ function allPlayerHandler(){
     }
 }
 
-//It is not required, to just decrease the crowding in sockets' codeblock.
+//Load a new Player instance
 function loadNewPiece(id){
     PLAYERS[id] = new Player(id);
     allPlayerHandler();
 }
 
-//Plan is to make this as the root of the game Logic
-// function gameLogicHandlerC(playerObj){
-//     if(playerObj.statusSumPid.status === 1){
-//         // PLAYERS[playerObj.id].myPieces[playerObj.statusSumPid.Pid].update(homeTilePos[id]);
-//         allPlayerHandler();
-//     }
-// }
-
+//
 function whichPiece(id){
     //rubbish
     for(let i = 0;i<4;i++){
