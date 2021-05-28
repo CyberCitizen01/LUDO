@@ -5,7 +5,10 @@ const socketIO = require('socket.io');
 
 const app = express();
 const server = http.createServer(app);
-const io = socketIO(server);
+const io = socketIO(server, {
+    cors: {
+      origin: '*'
+    }});
 
 const publicPath = path.join(__dirname, '../public');
 const port = process.env.PORT || 3000;
@@ -13,7 +16,6 @@ const port = process.env.PORT || 3000;
 app.use(express.static(publicPath));
 app.use(express.urlencoded({ extended: true }));
 
-let USERNAMES = ['Green Warrior', 'Yellow Rhino', 'Blue Fox', 'Red Fire'];
 let rooms = {};
 let messages = {};
 
@@ -49,9 +51,9 @@ nsp.on('connection',(socket)=>{
     });
 
     socket.on('random',(data,cb)=>{
-        let temp = Math.floor((Math.random()*6) + 1);
-        socket.to(data.room).emit('Thrown-dice', {id:data.id, Num:temp});
-        cb(temp);
+        data['num'] = Math.floor((Math.random()*6) + 1);
+        nsp.to(data.room).emit('Thrown-dice', data);
+        cb(data['num']);
     });
 
     socket.on('disconnect',()=>{
@@ -148,3 +150,11 @@ function deleteThisid(id){
         }
     }
 }
+
+// data = numb;
+// playerObj ={
+//     room: room_code,
+//     id: myid,
+//     pid: pid,
+//     num: temp
+// }
