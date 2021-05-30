@@ -208,7 +208,7 @@ socket.on('connect',function(){
 
 //To simulate dice
     if(chance === myid){    
-        document.querySelector('#randomButt').addEventListener('click',(event)=>{
+        document.querySelector('#randomButt').addEventListener('click',function(event){
         event.preventDefault();
         console.log('chance is working');
         diceAction();
@@ -220,7 +220,8 @@ socket.on('connect',function(){
     socket.on('is-it-your-chance',function(data){
         if(data===myid){
             styleButton(1);
-        }
+            outputMessage('your',4)
+        }else{outputMessage(USERNAMES[data]+"'s",4)}
         chance = data;
     });
 
@@ -259,6 +260,16 @@ function outputMessage(anObject,k){
         div.innerHTML = `<p>&#8605;  ${anObject} entered the game</p>`;
         document.querySelector('.msgBoard').appendChild(div);
     }
+    else if(k===3){
+        const div = document.createElement('div');
+        div.classList.add('messageFromServer');
+        div.innerHTML = `<p>${anObject}!!`
+    }
+    else if(k===4){
+        const div = document.createElement('div');
+        div.classList.add('messageFromServer');
+        div.innerHTML = `<p>Its ${anObject} chance!!`
+    }
 };
 
 //button disabling-enabling
@@ -280,18 +291,32 @@ function styleButton(k){
 
 //simulates the action of dice and also chance rotation.
 function diceAction(){
-    console.log('clicked Random Button');
-    let myTurn = {
-        room: room_code,
-        id: myid,
-        pid: whichPiece(myid)
-    }
-    socket.emit('random',myTurn, function(data){
-        styleButton(0);
-        console.log('random acknowledged');
-        socket.emit('chance',{room: room_code, nxt_id: chanceRotation(myid,data)});
-    });
+    outputMessage('Click on a piece of your choice',3)
+    canvas.addEventListener('click',function(e){
+        console.log('clicked Random Button');
+        let Xp = e.clientX - e.target.getBoundingClientRect().left;
+        let Yp = e.clientY - e.target.getBoundingClientRect().top;
+        let myTurn = {
+            room: room_code,
+            id: myid,
+        }
 
+        for(let i=0;i<4;i++){
+            if(Math.abs(PLAYERS[myid].myPieces[i].x - Xp)<50 && Math.abs(PLAYERS[myid].myPieces[i].y - Yp)<50){
+                console.log(i,'okokokok');
+                myTurn['pid'] = i;
+                console.log(myTurn);
+                socket.emit('random',myTurn, function(data){
+                    styleButton(0);
+                    console.log('random acknowledged');
+                    socket.emit('chance',{room: room_code, nxt_id: chanceRotation(myid,data)});
+                });
+                return 0;
+            }
+
+        }
+        console.log('man it is not working!');
+    })
 }
 
 //Initialise the game with the one who created the room.
@@ -356,11 +381,22 @@ function loadNewPiece(id){
 }
 
 //
-function whichPiece(id){
-    //rubbish
-    for(let i = 0;i<4;i++){
-        if(PLAYERS[id].myPieces[i].pos != 57){
-            return i;
-        }
-    }
-}
+// function whichPiece(id,e){
+//     //rubbish
+//     // for(let i = 0;i<4;i++){
+//     //     if(PLAYERS[id].myPieces[i].pos != 57){
+//     //         return i;
+//     //     }
+//     // }
+//     // canvas.addEventListener('click',function(e){
+//         let Xp = e.clientX - e.target.getBoundingClientRect().left;
+//         let Yp = e.clientY - e.target.getBoundingClientRect().top;
+//         for(let i=0;i<4;i++){
+//             if(Math.abs(PLAYERS[id].myPieces[i].x - Xp)<50 && Math.abs(PLAYERS[id].myPieces[i].y - Yp)<50){
+//                 console.log(i,'okokokok');
+//                 return i;
+//             }
+//         }
+//     // });
+//     //return 0;
+// }
