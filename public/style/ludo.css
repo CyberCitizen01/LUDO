@@ -165,3 +165,13 @@ body {
     margin-right: 40px;
     text-align: center;
 }
+
+#color-message-span1{
+    border-radius:4px;
+    font-family: 'ZCOOL KuaiLe', cursive;
+    padding: 8px
+}
+
+#color-message-span2{
+    font-family: 'Roboto Slab', serif;
+}
