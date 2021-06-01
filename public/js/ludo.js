@@ -138,14 +138,14 @@ class Piece{
         ctx.drawImage(this.image, this.x, this.y, 50, 50);
     }
 
-    update(data){
+    update(num){
         if(this.pos != -1){
-            for(let i=this.pos;i<this.pos+data;i++){
+            for(let i=this.pos;i<this.pos+num;i++){
                 this.path[i](this.color_id,this.Pid);console.log('hemilo selmon')
             }
-            this.pos += data;
+            this.pos += num;
 
-        }else if(data == 6){
+        }else if(num == 6){
             this.x = homeTilePos[this.color_id].x
             this.y = homeTilePos[this.color_id].y
             this.pos = 0;
@@ -211,6 +211,7 @@ socket.on('connect',function(){
         document.querySelector('#randomButt').addEventListener('click',function(event){
         event.preventDefault();
         console.log('chance is working');
+        styleButton(0);
         diceAction();
         });
     }
@@ -220,20 +221,23 @@ socket.on('connect',function(){
     socket.on('is-it-your-chance',function(data){
         if(data===myid){
             styleButton(1);
-            outputMessage('your',4)
-        }else{outputMessage(USERNAMES[data]+"'s",4)}
+            outputMessage({Name:'your',id:data},4)
+        }else{outputMessage({Name:USERNAMES[data]+"'s",id:data},4)}
         chance = data;
     });
 
     socket.on('new-user-joined',function(data){
         MYROOM.push(data.id);
         loadNewPiece(data.id);
-        outputMessage(USERNAMES[data.id],0);
+        outputMessage({Name:USERNAMES[data.id],id:data.id},0);
+    });
+
+    socket.on('rolled-dice',function(data){
+        data.id != myid?outputMessage({Name:USERNAMES[data.id],Num:data.num,id:data.id},1):outputMessage({Name: 'you', Num:data.num, id:data.id},1);
     });
 
     socket.on('Thrown-dice',async function(data){
         console.log(data);
-        data.id != myid?outputMessage({Name:USERNAMES[data.id],Num:data.num},1):outputMessage({Name: 'you', Num:data.num},1);
         await PLAYERS[data.id].myPieces[data.pid].update(data.num);
         allPlayerHandler();
     });
@@ -248,28 +252,34 @@ socket.on('disconnect', function(){
 
 //Output the message through DOM manipulation
 function outputMessage(anObject,k){
+    let msgBoard = document.querySelector('.msgBoard');
+
     if(k===1 && !(anObject.Name.includes('<') || anObject.Name.includes('>') || anObject.Name.includes('/'))){    
         const div = document.createElement('div');
         div.classList.add('message')
-        div.innerHTML = `<p><strong>&#9733;  ${anObject.Name}</strong> got a ${anObject.Num}</p>`;
-        document.querySelector('.msgBoard').appendChild(div);
+        div.innerHTML = `<p><strong>&#9733;  <span id="color-message-span1"style="background-color:${colors[anObject.id]}">${anObject.Name}</span></strong><span id="color-message-span2"> got a ${anObject.Num}</span></p>`;
+        msgBoard.appendChild(div);
     }
-    else if(k===0 && !(anObject.includes('<') || anObject.includes('>') || anObject.includes('/'))){
+    else if(k===0 && !(anObject.Name.includes('<') || anObject.Name.includes('>') || anObject.Name.includes('/'))){
         const div = document.createElement('div');
         div.classList.add('messageFromServer');
-        div.innerHTML = `<p>&#8605;  ${anObject} entered the game</p>`;
-        document.querySelector('.msgBoard').appendChild(div);
+        div.innerHTML = `<p>&#8605;  <span id="color-message-span1"style="background-color:${colors[anObject.id]}">${anObject.Name}</span><span id="color-message-span2"> entered the game</span></p>`;
+        msgBoard.appendChild(div);
     }
     else if(k===3){
         const div = document.createElement('div');
         div.classList.add('messageFromServer');
-        div.innerHTML = `<p>${anObject}!!`
+        div.innerHTML = `<span id="color-message-span2" style="background-color:${colors[myid]};padding:3px;border-radius:4px">${anObject}!!</span>`
+        msgBoard.appendChild(div);
     }
     else if(k===4){
         const div = document.createElement('div');
         div.classList.add('messageFromServer');
-        div.innerHTML = `<p>Its ${anObject} chance!!`
+        div.innerHTML = `<p><span id="color-message-span2">Its </span><span id="color-message-span1"style="background-color:${colors[anObject.id]}">${anObject.Name}</span><span id="color-message-span2"> chance!!</span></p>`
+        msgBoard.appendChild(div);
     }
+
+    msgBoard.scrollTop = msgBoard.scrollHeight - msgBoard.clientHeight;
 };
 
 //button disabling-enabling
@@ -291,38 +301,48 @@ function styleButton(k){
 
 //simulates the action of dice and also chance rotation.
 function diceAction(){
-    outputMessage('Click on a piece of your choice',3)
-    canvas.addEventListener('click',function(e){
-        console.log('clicked Random Button');
-        let Xp = e.clientX - e.target.getBoundingClientRect().left;
-        let Yp = e.clientY - e.target.getBoundingClientRect().top;
-        let myTurn = {
-            room: room_code,
-            id: myid,
-        }
-
+    socket.emit('roll-dice',{room:room_code,id:myid},function(num){
+        let spirit = 0;
         for(let i=0;i<4;i++){
-            if(Math.abs(PLAYERS[myid].myPieces[i].x - Xp)<50 && Math.abs(PLAYERS[myid].myPieces[i].y - Yp)<50){
-                console.log(i,'okokokok');
-                myTurn['pid'] = i;
-                console.log(myTurn);
-                socket.emit('random',myTurn, function(data){
-                    styleButton(0);
-                    console.log('random acknowledged');
-                    socket.emit('chance',{room: room_code, nxt_id: chanceRotation(myid,data)});
-                });
-                return 0;
-            }
-
+            if(PLAYERS[myid].myPieces[i].pos>-1){spirit++;}
         }
-        console.log('man it is not working!');
+        if(spirit!=0 || num==6){
+            outputMessage('Click on a piece',3)
+            canvas.addEventListener('click',function clickHandler(e){
+                console.log('clicked Random Button');
+                let Xp = e.clientX - e.target.getBoundingClientRect().left;
+                let Yp = e.clientY - e.target.getBoundingClientRect().top;
+                let myTurn = {
+                    room: room_code,
+                    id: myid,
+                    num: num
+                }
+        
+                for(let i=0;i<4;i++){
+                    if(Xp-PLAYERS[myid].myPieces[i].x<45 && Xp-PLAYERS[myid].myPieces[i].x>0 && Yp-PLAYERS[myid].myPieces[i].y<45 && Yp-PLAYERS[myid].myPieces[i].y>0){
+                        console.log(i,'okokokok');
+                        myTurn['pid'] = i;
+                        console.log(myTurn);
+                        socket.emit('random',myTurn, function(data){
+                            styleButton(0);
+                            console.log('random acknowledged');
+                            socket.emit('chance',{room: room_code, nxt_id: chanceRotation(myid,data)});
+                        });
+                        canvas.removeEventListener('click',clickHandler);
+                        return 0;
+                    }
+        
+                }
+                alert('You need to click on a piece of your color');
+            })
+        }else{socket.emit('chance',{room: room_code, nxt_id: chanceRotation(myid,num)});}
     })
 }
 
 //Initialise the game with the one who created the room.
 function StartTheGame(){
     MYROOM.forEach(function(numb){
-        numb==myid?outputMessage('You',0):outputMessage(USERNAMES[numb],0)
+        numb==myid?outputMessage({Name:'You',id:numb},0):outputMessage({Name:USERNAMES[numb],id:numb},0)
     });
     document.getElementById('my-name').innerHTML += USERNAMES[myid];console.log(myid);
     if(MYROOM.length === 1){
@@ -379,24 +399,3 @@ function loadNewPiece(id){
     PLAYERS[id] = new Player(id);
     allPlayerHandler();
 }
-
-//
-// function whichPiece(id,e){
-//     //rubbish
-//     // for(let i = 0;i<4;i++){
-//     //     if(PLAYERS[id].myPieces[i].pos != 57){
-//     //         return i;
-//     //     }
-//     // }
-//     // canvas.addEventListener('click',function(e){
-//         let Xp = e.clientX - e.target.getBoundingClientRect().left;
-//         let Yp = e.clientY - e.target.getBoundingClientRect().top;
-//         for(let i=0;i<4;i++){
-//             if(Math.abs(PLAYERS[id].myPieces[i].x - Xp)<50 && Math.abs(PLAYERS[id].myPieces[i].y - Yp)<50){
-//                 console.log(i,'okokokok');
-//                 return i;
-//             }
-//         }
-//     // });
-//     //return 0;
-// }
