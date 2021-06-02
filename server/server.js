@@ -18,6 +18,7 @@ app.use(express.urlencoded({ extended: true }));
 
 let rooms = {};
 let messages = {};
+let win = {};
 
 
 //
@@ -66,6 +67,12 @@ nsp.on('connection',(socket)=>{
         cb(data['num']);
     });
 
+    socket.on('WON',(OBJ)=>{
+        if(validateWinner(OBJ,socket)){
+            nsp.to(OBJ.room).emit('winner',OBJ.id);
+        }
+    });
+
     socket.on('disconnect',()=>{
         deleteThisid(socket.id);
         console.log('A client just got disconnected');
@@ -84,6 +91,7 @@ app.post('/',(req,res)=>{
     if(req.body.action_to_do === 'create'){
         let p0th = randomPath()
         rooms[p0th] = {};
+        win[p0th] = {};
         res.redirect(301, 'ludo/' + p0th);
     } else if(req.body.action_to_do === 'join'){
             if(Object.keys(rooms).includes(req.body.roomcode)){
@@ -153,12 +161,38 @@ function generate_member_id(s_id,rc){
 function deleteThisid(id){
     for(var roomcd in rooms){
         if(rooms.hasOwnProperty(roomcd)){
-            ky = Object.keys(rooms[roomcd]).find( key => rooms[roomcd][key][sid] === id);
+            ky = Object.keys(rooms[roomcd]).find( key => rooms[roomcd][key]['sid'] === id);
             if(typeof(ky) === 'string'){
                 delete rooms[roomcd][ky];
             }
+            if(Object.keys(rooms[roomcd]).length == 0){
+                delete rooms[roomcd];
+            }
         }
     }
+    
+}
+
+function validateWinner(OBJ,socket){
+    win[OBJ.room][OBJ.player] = {o:OBJ,s:socket.id};
+    if(()=>{
+        if(Object.keys(win[OBJ.room]).length == 4){
+            for(let i=0;i<4;i++){
+                if(win[OBJ.room][String(i)]['s']==rooms[OBJ.room][String(i)]['sid']){
+                    continue;
+                }else{return false}
+            }
+            return true;
+        }else{return false;}
+    }){
+        for(let i=0;i<3;i++){
+            if(win[OBJ.room][String(i)]['o'].id == win[OBJ.room][String(i+1)]['o'].id){
+                continue;
+            }else{return false}
+        }
+        return true;
+    }else{return false;}
+    
 }
 
 // rooms ={
