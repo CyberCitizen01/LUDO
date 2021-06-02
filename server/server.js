@@ -18,6 +18,7 @@ app.use(express.urlencoded({ extended: true }));
 
 let rooms = {};
 let messages = {};
+let win = {};
 
 
 //
@@ -46,14 +47,30 @@ nsp.on('connection',(socket)=>{
         }
     });
 
+    socket.on('roll-dice',(data,cb)=>{
+        rooms[data.room][data.id]['num'] = Math.floor((Math.random()*6) + 1);
+        data['num'] = rooms[data.room][data.id]['num']
+        nsp.to(data.room).emit('rolled-dice',data);
+        cb(rooms[data.room][data.id]['num']);
+    })
+
     socket.on('chance',(data)=>{
         nsp.to(data.room).emit('is-it-your-chance',data.nxt_id);
     });
 
     socket.on('random',(data,cb)=>{
-        data['num'] = Math.floor((Math.random()*6) + 1);
+        if(data['num'] != rooms[data.room][data.id]['num']){
+            console.log('Someone is trying to cheat!');
+        }
+        data['num'] = rooms[data.room][data.id]['num']
         nsp.to(data.room).emit('Thrown-dice', data);
         cb(data['num']);
+    });
+
+    socket.on('WON',(OBJ)=>{
+        if(validateWinner(OBJ,socket)){
+            nsp.to(OBJ.room).emit('winner',OBJ.id);
+        }
     });
 
     socket.on('disconnect',()=>{
@@ -74,6 +91,7 @@ app.post('/',(req,res)=>{
     if(req.body.action_to_do === 'create'){
         let p0th = randomPath()
         rooms[p0th] = {};
+        win[p0th] = {};
         res.redirect(301, 'ludo/' + p0th);
     } else if(req.body.action_to_do === 'join'){
             if(Object.keys(rooms).includes(req.body.roomcode)){
@@ -131,7 +149,7 @@ function generate_member_id(s_id,rc){
         if(m_r.includes(m_id.toString())){
             return generate_member_id(s_id,rc)
         }else{
-            rooms[rc][m_id] = s_id;
+            rooms[rc][m_id] = {sid:s_id,num:0};
             return m_id;
         }
     } else{
@@ -143,15 +161,57 @@ function generate_member_id(s_id,rc){
 function deleteThisid(id){
     for(var roomcd in rooms){
         if(rooms.hasOwnProperty(roomcd)){
-            ky = Object.keys(rooms[roomcd]).find( key => rooms[roomcd][key] === id);
+            ky = Object.keys(rooms[roomcd]).find( key => rooms[roomcd][key]['sid'] === id);
             if(typeof(ky) === 'string'){
                 delete rooms[roomcd][ky];
             }
+            if(Object.keys(rooms[roomcd]).length == 0){
+                delete rooms[roomcd];
+            }
         }
     }
+    
 }
 
+function validateWinner(OBJ,socket){
+    win[OBJ.room][OBJ.player] = {o:OBJ,s:socket.id};
+    if(()=>{
+        if(Object.keys(win[OBJ.room]).length == 4){
+            for(let i=0;i<4;i++){
+                if(win[OBJ.room][String(i)]['s']==rooms[OBJ.room][String(i)]['sid']){
+                    continue;
+                }else{return false}
+            }
+            return true;
+        }else{return false;}
+    }){
+        for(let i=0;i<3;i++){
+            if(win[OBJ.room][String(i)]['o'].id == win[OBJ.room][String(i+1)]['o'].id){
+                continue;
+            }else{return false}
+        }
+        return true;
+    }else{return false;}
+    
+}
+
+// rooms ={
+//     'ax0fed':{
+//                 0:{'sid':'akjldsaa',num:0},
+//                 1:{'sid':'laiukfjh',num:0},
+//                 2:{'sid':'asdlksfh',num:0},
+//                 3:{'sid':'ufhdjaad',num:0}
+//              },
+//     'ghty12':{
+//                 0:{'sid':'asdghfad',num:0},
+//                 1:{'sid':'hydgdjdj',num:0},
+//                 2:{'sid':'kujhsgdf',num:0},
+//                 3:{'sid':'ghhgdsyl',num:0}
+//              },
+// }
+//
 // data = numb;
+//
 // playerObj ={
 //     room: room_code,
 //     id: myid,

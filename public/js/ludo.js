@@ -34,12 +34,19 @@ class Player{
         this.myPieces = new Object();
         for(let i=0;i<4;i++){
             this.myPieces[i] = new Piece(String(i),String(id));
-        }        
+        }
+        this.won = parseInt(0);        
     }
     draw(){
         for(let i=0;i<4;i++){
             this.myPieces[i].draw();
         }
+    }
+
+    didIwin(){
+        if(this.won == 4){
+            return 1;
+        }else{return 0;}
     }
 }
 
@@ -138,14 +145,18 @@ class Piece{
         ctx.drawImage(this.image, this.x, this.y, 50, 50);
     }
 
-    update(data){
-        if(this.pos != -1){
-            for(let i=this.pos;i<this.pos+data;i++){
+    update(num){
+        if(this.pos != -1 && this.pos+num<=56){
+
+            for(let i=this.pos;i<this.pos+num;i++){
                 this.path[i](this.color_id,this.Pid);console.log('hemilo selmon')
             }
-            this.pos += data;
+            this.pos += num;
+            if(this.pos ==56){
+                window.PLAYERS[this.color_id].won +=1;
+            }
 
-        }else if(data == 6){
+        }else if(num == 6){
             this.x = homeTilePos[this.color_id].x
             this.y = homeTilePos[this.color_id].y
             this.pos = 0;
@@ -195,6 +206,12 @@ class Piece{
         window.PLAYERS[id].myPieces[pid].y += 50;
         console.log('to 315',this.x,this.y,typeof(this.x),typeof(this.y));
     }
+
+    kill(){
+        this.x = allPiecesePos[this.color_id][this.Pid].x;
+        this.y = allPiecesePos[this.color_id][this.Pid].y;
+        this.pos = -1;  
+    }
 }
 
 socket.on('connect',function(){
@@ -208,9 +225,10 @@ socket.on('connect',function(){
 
 //To simulate dice
     if(chance === myid){    
-        document.querySelector('#randomButt').addEventListener('click',(event)=>{
+        document.querySelector('#randomButt').addEventListener('click',function(event){
         event.preventDefault();
         console.log('chance is working');
+        styleButton(0);
         diceAction();
         });
     }
@@ -220,22 +238,42 @@ socket.on('connect',function(){
     socket.on('is-it-your-chance',function(data){
         if(data===myid){
             styleButton(1);
-        }
+            outputMessage({Name:'your',id:data},4)
+        }else{outputMessage({Name:USERNAMES[data]+"'s",id:data},4)}
         chance = data;
     });
 
     socket.on('new-user-joined',function(data){
         MYROOM.push(data.id);
         loadNewPiece(data.id);
-        outputMessage(USERNAMES[data.id],0);
+        outputMessage({Name:USERNAMES[data.id],id:data.id},0);
+    });
+
+    socket.on('rolled-dice',function(data){
+        data.id != myid?outputMessage({Name:USERNAMES[data.id],Num:data.num,id:data.id},1):outputMessage({Name: 'you', Num:data.num, id:data.id},1);
     });
 
     socket.on('Thrown-dice',async function(data){
         console.log(data);
-        data.id != myid?outputMessage({Name:USERNAMES[data.id],Num:data.num},1):outputMessage({Name: 'you', Num:data.num},1);
         await PLAYERS[data.id].myPieces[data.pid].update(data.num);
-        allPlayerHandler();
+        if(iKill(data.id,data.pid)){
+            outputMessage({msg:'Oops got killed',id:data.id},5);
+            allPlayerHandler();
+        }else{
+            allPlayerHandler();
+        }
+        if(PLAYERS[data.id].didIwin()){
+            socket.emit('WON',{
+                room: data.room,
+                id: data.id,
+                player:myid
+            });
+        }
     });
+
+    socket.on('winner',function(data){
+        showModal(data);
+    })
 
 });
 
@@ -247,18 +285,40 @@ socket.on('disconnect', function(){
 
 //Output the message through DOM manipulation
 function outputMessage(anObject,k){
+    let msgBoard = document.querySelector('.msgBoard');
+
     if(k===1 && !(anObject.Name.includes('<') || anObject.Name.includes('>') || anObject.Name.includes('/'))){    
         const div = document.createElement('div');
         div.classList.add('message')
-        div.innerHTML = `<p><strong>&#9733;  ${anObject.Name}</strong> got a ${anObject.Num}</p>`;
-        document.querySelector('.msgBoard').appendChild(div);
+        div.innerHTML = `<p><strong>&#9733;  <span id="color-message-span1"style="text-shadow: 0 0 4px ${colors[anObject.id]};">${anObject.Name}</span></strong><span id="color-message-span2"> got a ${anObject.Num}</span></p>`;
+        msgBoard.appendChild(div);
     }
-    else if(k===0 && !(anObject.includes('<') || anObject.includes('>') || anObject.includes('/'))){
+    else if(k===0 && !(anObject.Name.includes('<') || anObject.Name.includes('>') || anObject.Name.includes('/'))){
         const div = document.createElement('div');
         div.classList.add('messageFromServer');
-        div.innerHTML = `<p>&#8605;  ${anObject} entered the game</p>`;
-        document.querySelector('.msgBoard').appendChild(div);
+        div.innerHTML = `<p>&#8605;  <span id="color-message-span1"style="text-shadow: 0 0 4px ${colors[anObject.id]};">${anObject.Name}</span><span id="color-message-span2"> entered the game</span></p>`;
+        msgBoard.appendChild(div);
     }
+    else if(k===3){
+        const div = document.createElement('div');
+        div.classList.add('messageFromServer');
+        div.innerHTML = `<span id="color-message-span2" style="text-shadow: 0 0 4px ${colors[myid]};">${anObject}!!</span>`
+        msgBoard.appendChild(div);
+    }
+    else if(k===4){
+        const div = document.createElement('div');
+        div.classList.add('messageFromServer');
+        div.innerHTML = `<p><span id="color-message-span2">Its </span><span id="color-message-span1"style="text-shadow: 0 0 4px ${colors[anObject.id]};">${anObject.Name}</span><span id="color-message-span2"> chance!!</span></p>`
+        msgBoard.appendChild(div);
+    }
+
+    else if(k===5){
+        const div = document.createElement('div');
+        div.classList.add('messageFromServer');
+        div.innerHTML = `<span id="color-message-span2" style="text-shadow: 0 0 4px ${colors[anObject.id]};">${anObject.msg}!!</span>`
+        msgBoard.appendChild(div);
+    }
+    msgBoard.scrollTop = msgBoard.scrollHeight - msgBoard.clientHeight;
 };
 
 //button disabling-enabling
@@ -280,24 +340,58 @@ function styleButton(k){
 
 //simulates the action of dice and also chance rotation.
 function diceAction(){
-    console.log('clicked Random Button');
-    let myTurn = {
-        room: room_code,
-        id: myid,
-        pid: whichPiece(myid)
-    }
-    socket.emit('random',myTurn, function(data){
-        styleButton(0);
-        console.log('random acknowledged');
-        socket.emit('chance',{room: room_code, nxt_id: chanceRotation(myid,data)});
-    });
+    socket.emit('roll-dice',{room:room_code,id:myid},function(num){
+        let spirit = [];
+        for(let i=0;i<4;i++){
+            if(PLAYERS[myid].myPieces[i].pos>-1 && PLAYERS[myid].myPieces[i].pos<56){
+                spirit.push(i);
 
+            }
+        }
+        if(spirit.length!=0 || num==6){
+            outputMessage('Click on a piece',3)
+            canvas.addEventListener('click',function clickHandler(e){
+                console.log('clicked Random Button');
+                let Xp = e.clientX - e.target.getBoundingClientRect().left;
+                let Yp = e.clientY - e.target.getBoundingClientRect().top;
+                let myTurn = {
+                    room: room_code,
+                    id: myid,
+                    num: num
+                }
+                let alert1 = true;
+
+                for(let i=0;i<4;i++){
+                    if(Xp-PLAYERS[myid].myPieces[i].x<45 && Xp-PLAYERS[myid].myPieces[i].x>0 && Yp-PLAYERS[myid].myPieces[i].y<45 && Yp-PLAYERS[myid].myPieces[i].y>0){
+                        console.log(i,'okokokok');
+                        if(spirit.includes(i) || num==6){
+                            myTurn['pid'] = i;
+                            console.log(myTurn);
+                            socket.emit('random',myTurn, function(data){
+                                styleButton(0);
+                                console.log('random acknowledged');
+                                socket.emit('chance',{room: room_code, nxt_id: chanceRotation(myid,data)});
+                            });
+                            canvas.removeEventListener('click',clickHandler);
+                            return 0;
+                        }else{
+                            alert('Please click on a valid Piece.');
+                            alert1 = false;
+                            break;
+                        }
+                    }
+        
+                }
+                if(alert1){alert('You need to click on a piece of your color');}
+            })
+        }else{socket.emit('chance',{room: room_code, nxt_id: chanceRotation(myid,num)});}
+    })
 }
 
 //Initialise the game with the one who created the room.
 function StartTheGame(){
     MYROOM.forEach(function(numb){
-        numb==myid?outputMessage('You',0):outputMessage(USERNAMES[numb],0)
+        numb==myid?outputMessage({Name:'You',id:numb},0):outputMessage({Name:USERNAMES[numb],id:numb},0)
     });
     document.getElementById('my-name').innerHTML += USERNAMES[myid];console.log(myid);
     if(MYROOM.length === 1){
@@ -341,7 +435,7 @@ function chanceRotation(id,temp){
 
 }
 
-//This is the function that actually draws 4 x 4 = 16 pieces per call
+//draws 4 x 4 = 16 pieces per call
 function allPlayerHandler(){
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     for(let i=0;i<Object.keys(PLAYERS).length;i++){
@@ -355,12 +449,37 @@ function loadNewPiece(id){
     allPlayerHandler();
 }
 
-//
-function whichPiece(id){
-    //rubbish
-    for(let i = 0;i<4;i++){
-        if(PLAYERS[id].myPieces[i].pos != 57){
-            return i;
+function iKill(id,pid){
+    let boss = PLAYERS[id].myPieces[pid];
+    for(let i=0;i<4;i++){
+        for(let j=0;j<4;j++){
+            if(i!=id && boss.x == PLAYERS[i].myPieces[j].x && boss.y == PLAYERS[i].myPieces[j].y){
+                if(!inAhomeTile(id,pid)){
+                    PLAYERS[i].myPieces[j].kill();
+                    return 1;
+                }
+            }
         }
     }
+    return 0;
+}
+
+function inAhomeTile(id,pid){
+    for(let i=0;i<4;i++){
+        if(PLAYERS[id].myPieces[pid].x == homeTilePos[i].x && PLAYERS[id].myPieces[pid].y == homeTilePos[i].y){
+            return true;
+        }
+    }
+
+    return false;
+}
+
+function showModal(id){
+    document.getElementById("myModal").style.display = "block";
+    document.getElementById("win-win").innerHTML = `The winner is ${USERNAMES[id]}`
+
+}
+
+function goHome(){
+    window.location.replace("/");
 }

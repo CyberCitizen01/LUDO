@@ -6,6 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LUDO</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Audiowide|Sofia">
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Slab&family=ZCOOL+KuaiLe&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../style/ludo.css">
     <script src='../../socket.io/socket.io.js'></script>
 </head>
@@ -20,6 +22,14 @@
 
     <div class="heading-tile">
         <h2>LUDO - A 4 Player Game</h2>
+    </div>
+    
+    <div id="myModal" class="modal">
+        <div class="modal-content">
+                <h3 id="win-win"></h3>
+                <input type="button" id="HOME" onclick="goHome()">                
+            <br>
+        </div>  
     </div>
 
     <div class="gameWrapper">
