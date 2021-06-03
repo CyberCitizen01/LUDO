@@ -156,7 +156,7 @@ class Piece{
                 window.PLAYERS[this.color_id].won +=1;
             }
 
-        }else if(num == 6){
+        }else if(num == 6 && this.pos == -1){
             this.x = homeTilePos[this.color_id].x
             this.y = homeTilePos[this.color_id].y
             this.pos = 0;
@@ -343,7 +343,7 @@ function diceAction(){
     socket.emit('roll-dice',{room:room_code,id:myid},function(num){
         let spirit = [];
         for(let i=0;i<4;i++){
-            if(PLAYERS[myid].myPieces[i].pos>-1 && PLAYERS[myid].myPieces[i].pos<56){
+            if(PLAYERS[myid].myPieces[i].pos>-1 && PLAYERS[myid].myPieces[i].pos + num <= 56){
                 spirit.push(i);
 
             }
@@ -364,7 +364,7 @@ function diceAction(){
                 for(let i=0;i<4;i++){
                     if(Xp-PLAYERS[myid].myPieces[i].x<45 && Xp-PLAYERS[myid].myPieces[i].x>0 && Yp-PLAYERS[myid].myPieces[i].y<45 && Yp-PLAYERS[myid].myPieces[i].y>0){
                         console.log(i,'okokokok');
-                        if(spirit.includes(i) || num==6){
+                        if((spirit.includes(i) || num==6) && PLAYERS[myid].myPieces[i].pos+num <=56){
                             myTurn['pid'] = i;
                             console.log(myTurn);
                             socket.emit('random',myTurn, function(data){
