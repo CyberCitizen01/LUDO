@@ -74,7 +74,11 @@ nsp.on('connection',(socket)=>{
     });
 
     socket.on('disconnect',()=>{
-        deleteThisid(socket.id);
+        let roomKey = deleteThisid(socket.id);
+        if(roomKey != undefined){
+            console.log(rooms[roomKey.room],socket.id);
+            nsp.to(roomKey.room).emit('user-disconnected',roomKey.key)
+        }
         console.log('A client just got disconnected');
     });
 });
@@ -92,6 +96,7 @@ app.post('/',(req,res)=>{
         let p0th = randomPath()
         rooms[p0th] = {};
         win[p0th] = {};
+        messages[p0th] = {};
         res.redirect(301, 'ludo/' + p0th);
     } else if(req.body.action_to_do === 'join'){
             if(Object.keys(rooms).includes(req.body.roomcode)){
@@ -161,12 +166,14 @@ function generate_member_id(s_id,rc){
 function deleteThisid(id){
     for(var roomcd in rooms){
         if(rooms.hasOwnProperty(roomcd)){
-            ky = Object.keys(rooms[roomcd]).find( key => rooms[roomcd][key]['sid'] === id);
+            ky = Object.keys(rooms[roomcd]).find( key => rooms[roomcd][key]['sid'] == id);
             if(typeof(ky) === 'string'){
                 delete rooms[roomcd][ky];
+                return {key:ky,room:roomcd};
             }
             if(Object.keys(rooms[roomcd]).length == 0){
                 delete rooms[roomcd];
+                return undefined;
             }
         }
     }
@@ -209,6 +216,12 @@ function validateWinner(OBJ,socket){
 //                 3:{'sid':'ghhgdsyl',num:0}
 //              },
 // }
+//
+// message ={
+//     'ax0fed':{
+//                 hasTheGameAlreadyStarted:false,
+//                 allXY:{}
+//}
 //
 // data = numb;
 //
