@@ -4,7 +4,7 @@
   "description": "A multi-player LUDO game, made with node.js, socket.io",
   "main": "server/server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "/usr/bin/env python3 test/test.py",
     "start": "node server/server.js",
     "develop": "DEBUG=Ludo-Final:* nodemon server/server.js"
   },
