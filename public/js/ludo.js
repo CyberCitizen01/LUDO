@@ -393,7 +393,9 @@ function StartTheGame(){
     MYROOM.forEach(function(numb){
         numb==myid?outputMessage({Name:'You',id:numb},0):outputMessage({Name:USERNAMES[numb],id:numb},0)
     });
-    document.getElementById('my-name').innerHTML += USERNAMES[myid];console.log(myid);
+    document.getElementById('my-name').innerHTML += USERNAMES[myid];console.log(myid); //my-name
+    let copyText = `\n\nMy room:\n${window.location.href} \nor join the room via My room code:\n${room_code}`
+    document.getElementById('copy').innerHTML += copyText;
     if(MYROOM.length === 1){
         styleButton(1);
         chance = myid;
@@ -480,6 +482,28 @@ function showModal(id){
 
 }
 
-function goHome(){
-    window.location.replace("/");
+async function copyhandler() {
+    var copyText = document.getElementById("copy").innerHTML;
+    await navigator.clipboard.writeText(copyText);
+    
+    var tooltip = document.getElementById("myTooltip");
+    tooltip.innerHTML = "Copied!!";
+}
+  
+function outFunc() {
+    var tooltip = document.getElementById("myTooltip");
+    tooltip.innerHTML = "Copy to clipboard";
+}
+
+async function copyhandlerLink() {
+    var copyText = window.location.href;
+    await navigator.clipboard.writeText(copyText);
+    
+    var tooltip = document.getElementById("myTooltipLink");
+    tooltip.innerHTML = "Copied!!";
+}
+  
+function outFuncLink() {
+    var tooltip = document.getElementById("myTooltipLink");
+    tooltip.innerHTML = "Copy room link to clipboard";
 }
