@@ -18,7 +18,7 @@ except ConnectionError:
         npn run develop')
     exit(1)
 else:
-    chromedriver = __import__('shutil').which('chromedriver') is not None ? 'chromedriver': './drivers/chromedriver'
+    chromedriver = 'chromedriver' if __import__('shutil').which('chromedriver') is not None else './drivers/chromedriver'
     chrome_driver = webdriver.Chrome(chromedriver)
     chrome_driver.get(url)
 
