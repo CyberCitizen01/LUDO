@@ -23,11 +23,11 @@ You can either build the app by cloning the repository or by pulling the Docker 
   
   Pull the [image](https://hub.docker.com/r/cybercitizen01/the-ludo-game):
   ```sh
-  docker pull cybercitizen01/the-ludo-game
+  docker pull cybercitizen01/the-ludo-game:1.0.0
   ```
   And run it:
   ```sh
-  docker run --name the-lodu-game -p 3000:3000 the-ludo-game-image
+  docker run --name the-lodu-game -p 3000:3000 cybercitizen01/the-ludo-game:1.0.0
   ```
 <br>
 
