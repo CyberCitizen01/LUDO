@@ -22,10 +22,10 @@ let allPiecesePos = {
 }
 
 let homeTilePos = {
-    0:{x: 50,y:300},
-    1:{x:400,y: 50},
-    2:{x:650,y:400},
-    3:{x:300,y:650}
+    0:{0:{x: 50,y:300},1:{x:300,y:100}},
+    1:{0:{x:400,y: 50},1:{x:600,y:300}},
+    2:{0:{x:650,y:400},1:{x:400,y:600}},
+    3:{0:{x:300,y:650},1:{x:100,y:400}}
 }
 
 class Player{
@@ -157,8 +157,8 @@ class Piece{
             }
 
         }else if(num == 6 && this.pos == -1){
-            this.x = homeTilePos[this.color_id].x
-            this.y = homeTilePos[this.color_id].y
+            this.x = homeTilePos[this.color_id][0].x
+            this.y = homeTilePos[this.color_id][0].y
             this.pos = 0;
         }
     }
@@ -249,6 +249,10 @@ socket.on('connect',function(){
         outputMessage({Name:USERNAMES[data.id],id:data.id},0);
     });
 
+    socket.on('user-disconnected',function(data){
+        outputMessage({Name:USERNAMES[data],id:data},6);
+    })
+
     socket.on('rolled-dice',function(data){
         data.id != myid?outputMessage({Name:USERNAMES[data.id],Num:data.num,id:data.id},1):outputMessage({Name: 'you', Num:data.num, id:data.id},1);
     });
@@ -316,6 +320,13 @@ function outputMessage(anObject,k){
         const div = document.createElement('div');
         div.classList.add('messageFromServer');
         div.innerHTML = `<span id="color-message-span2" style="text-shadow: 0 0 4px ${colors[anObject.id]};">${anObject.msg}!!</span>`
+        msgBoard.appendChild(div);
+    }
+
+    else if(k===6){
+        const div = document.createElement('div');
+        div.classList.add('messageFromServer');
+        div.innerHTML = `<p>&#8605;  <span id="color-message-span1"style="text-shadow: 0 0 4px ${colors[anObject.id]};">${anObject.Name}</span><span id="color-message-span2"> just left the game</span></p>`;
         msgBoard.appendChild(div);
     }
     msgBoard.scrollTop = msgBoard.scrollHeight - msgBoard.clientHeight;
@@ -468,7 +479,7 @@ function iKill(id,pid){
 
 function inAhomeTile(id,pid){
     for(let i=0;i<4;i++){
-        if(PLAYERS[id].myPieces[pid].x == homeTilePos[i].x && PLAYERS[id].myPieces[pid].y == homeTilePos[i].y){
+        if((PLAYERS[id].myPieces[pid].x == homeTilePos[i][0].x && PLAYERS[id].myPieces[pid].y == homeTilePos[i][0].y) || (PLAYERS[id].myPieces[pid].x == homeTilePos[i][1].x && PLAYERS[id].myPieces[pid].y == homeTilePos[i][1].y)){
             return true;
         }
     }
