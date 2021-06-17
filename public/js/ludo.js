@@ -218,7 +218,7 @@ socket.on('connect',function(){
     console.log('You are connected to the server!!');
 
     socket.emit('fetch',room_code,function(data,id){
-        MYROOM = data;
+        MYROOM = data.sort(function(a, b){return a - b});
         myid = id;
         StartTheGame();
     });
@@ -245,13 +245,32 @@ socket.on('connect',function(){
 
     socket.on('new-user-joined',function(data){
         MYROOM.push(data.id);
+        MYROOM.sort(function(a, b){return a - b});
         loadNewPiece(data.id);
         outputMessage({Name:USERNAMES[data.id],id:data.id},0);
+        //stop timer,and hide modal.
+        document.getElementById("myModal-2").style.display = "none";
+        let butt = document.getElementById('WAIT');
+        butt.disabled = false;
+        butt.style.opacity =  1;
+        butt.style.cursor = "pointer"
+        clearInterval(window.timer);
     });
 
     socket.on('user-disconnected',function(data){
         outputMessage({Name:USERNAMES[data],id:data},6);
+        resumeHandler(data);    
     })
+
+    socket.on('resume',function(data){
+        resume(data.id);
+        outputMessage({id:data.click,msg:`${USERNAMES[data.click]} has resumed the game without ${USERNAMES[data.id]}`},5)
+    });
+
+    socket.on('wait',function(data){
+        wait();
+        outputMessage({id:data.click,msg:`${USERNAMES[data.click]} has decided to wait`},5)
+    });
 
     socket.on('rolled-dice',function(data){
         data.id != myid?outputMessage({Name:USERNAMES[data.id],Num:data.num,id:data.id},1):outputMessage({Name: 'you', Num:data.num, id:data.id},1);
@@ -405,7 +424,7 @@ function StartTheGame(){
         numb==myid?outputMessage({Name:'You',id:numb},0):outputMessage({Name:USERNAMES[numb],id:numb},0)
     });
     document.getElementById('my-name').innerHTML += USERNAMES[myid];console.log(myid); //my-name
-    let copyText = `\n\nMy room:\n${window.location.href} \nor join the room via My room code:\n${room_code}`
+    let copyText = `\n\nMy room:\n${window.location.href} \nor join the room via\nMy room code:${room_code}`
     document.getElementById('copy').innerHTML += copyText;
     if(MYROOM.length === 1){
         styleButton(1);
@@ -437,15 +456,18 @@ function loadAllPieces(){
 }
 
 //rotate chance, required for the game
-function chanceRotation(id,temp){
-    if(temp != 6){
-        if(id+1 >= 4){
-            return 0;
+function chanceRotation(id,num){
+    if(num==6){
+        return id
+    }
+    else{
+        let c = MYROOM[chance+1]
+        if(c!=undefined){
+            return c;
         }else{
-            return id+1;
+            return MYROOM[0];
         }
-    }else{return id}
-
+    }
 }
 
 //draws 4 x 4 = 16 pieces per call
@@ -488,7 +510,7 @@ function inAhomeTile(id,pid){
 }
 
 function showModal(id){
-    document.getElementById("myModal").style.display = "block";
+    document.getElementById("myModal-1").style.display = "block";
     document.getElementById("win-win").innerHTML = `The winner is ${USERNAMES[id]}`
 
 }
@@ -517,4 +539,65 @@ async function copyhandlerLink() {
 function outFuncLink() {
     var tooltip = document.getElementById("myTooltipLink");
     tooltip.innerHTML = "Copy room link to clipboard";
+}
+
+function resumeHandler(id){
+    document.getElementById("myModal-2").style.display = "block";
+    //who left+timer!
+    let theOneWhoLeft = document.getElementById('theOneWhoLeft');
+    let seconds = document.getElementById('seconds');
+    let i = 10
+    theOneWhoLeft.innerHTML = USERNAMES[id]
+    theOneWhoLeft.style.textShadow = `0 0 4px ${colors[id]}`;
+    document.getElementById('RESUME').onclick = function(){
+        resume(id);
+        socket.emit('resume',{
+            room:room_code,
+            id:id,
+            click:myid
+        },function(){
+            outputMessage({id:myid,msg:`You have resumed the game without ${USERNAMES[id]}`},5)
+        });
+
+    };
+    document.getElementById('WAIT').onclick = function(){
+        wait();
+        socket.emit('wait',{
+            room:room_code,
+            click:myid
+        },function(){
+            outputMessage({id:myid,msg:`You have decided to wait`},5)
+        });
+
+    };
+    window.timer = setInterval(function(){
+        i-=1;
+        seconds.innerHTML = ` in ${i}`;
+        if(i==0){
+            resume(id);
+            socket.emit('resume',{
+                room:room_code,
+                id:id,
+                click:myid
+            });
+
+        }
+    }, 1000)
+}
+
+function resume(id){
+    document.getElementById("myModal-2").style.display = "none";
+    clearInterval(timer);
+    MYROOM.splice(id,1);
+    delete PLAYERS[id];
+    allPlayerHandler();
+}
+
+function wait(){
+    clearInterval(timer);
+    document.getElementById('seconds').innerHTML = '';
+    let butt = document.getElementById('WAIT');
+    butt.disabled = true;
+    butt.style.opacity =  0.6;
+    butt.style.cursor = "not-allowed"
 }

@@ -39,15 +39,22 @@
         </div>
     </div>
 
-
     <div class="heading-tile">
         <h2>LUDO - A 4 Player Game</h2>
     </div>
     
-    <div id="myModal" class="modal">
+    <div id="myModal-1" class="modal">
         <div class="modal-content">
                 <h3 id="win-win"></h3>
-                <input type="button" id="HOME" onclick='window.location.replace("/");'>                
+                <button id="HOME" onclick='window.location.replace("/");'>HOME</button>
+            <br>
+        </div>  
+    </div>
+    <div id="myModal-2" class="modal">
+        <div class="modal-content" style="margin: 15% auto;">
+                <h3 id="resume">Resume the game without <span id="theOneWhoLeft"></span><span id="seconds"> in 10</span>.</h3>
+                <button id="RESUME" >RESUME</button>
+                <button id="WAIT" >WAIT</button>
             <br>
         </div>  
     </div>

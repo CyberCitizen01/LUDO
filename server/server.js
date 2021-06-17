@@ -73,11 +73,21 @@ nsp.on('connection',(socket)=>{
         }
     });
 
+    socket.on('resume',(data,cb)=>{
+        socket.to(data.room).emit('resume',data);
+        cb();
+    });
+
+    socket.on('wait',(data,cb)=>{
+        socket.to(data.room).emit('wait',data);
+        cb();
+    });
+
     socket.on('disconnect',()=>{
         let roomKey = deleteThisid(socket.id);
         if(roomKey != undefined){
             console.log(rooms[roomKey.room],socket.id);
-            nsp.to(roomKey.room).emit('user-disconnected',roomKey.key)
+            socket.to(roomKey.room).emit('user-disconnected',roomKey.key)
         }
         console.log('A client just got disconnected');
     });
