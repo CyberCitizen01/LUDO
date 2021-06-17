@@ -212,8 +212,8 @@ body {
     left: 250px;
 }
 .ludoImg {
-    width: 750px;
-    height: 750px;
+    width: 800px;
+    height: 800px;
     position: absolute;
     top: 0;
     left: 0;
@@ -228,8 +228,8 @@ body {
     width: 750px;
     height: 750px;
     position: absolute;
-    top: 0px;
-    left: 0px;
+    top: 25px;
+    left: 25px;
     border: 2px solid;
     z-index: 1;
 }
