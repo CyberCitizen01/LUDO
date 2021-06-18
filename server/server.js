@@ -17,7 +17,7 @@ app.use(express.static(publicPath));
 app.use(express.urlencoded({ extended: true }));
 
 let rooms = {};
-let messages = {};
+let NumberOfMembers = {};
 let win = {};
 
 
@@ -75,6 +75,8 @@ nsp.on('connection',(socket)=>{
 
     socket.on('resume',(data,cb)=>{
         socket.to(data.room).emit('resume',data);
+        NumberOfMembers[data.room].members<=2?2:NumberOfMembers[data.room].members -= 1;
+        NumberOfMembers[data.room].constant = true;
         cb();
     });
 
@@ -106,7 +108,7 @@ app.post('/',(req,res)=>{
         let p0th = randomPath()
         rooms[p0th] = {};
         win[p0th] = {};
-        messages[p0th] = {};
+        NumberOfMembers[p0th] = {constant:false,members:4};
         res.redirect(301, 'ludo/' + p0th);
     } else if(req.body.action_to_do === 'join'){
             if(Object.keys(rooms).includes(req.body.roomcode)){
@@ -126,7 +128,7 @@ app.get('/ludo', (req,res)=>{
 });
 
 app.get('/ludo/:ROOMCODE', (req,res)=>{
-    if(Object.keys(rooms).includes(req.params.ROOMCODE) && Object.keys(req.query).length===0  &&  Object.keys(rooms[req.params.ROOMCODE]).length <= 3){
+    if(Object.keys(rooms).includes(req.params.ROOMCODE) && Object.keys(req.query).length===0  &&  Object.keys(rooms[req.params.ROOMCODE]).length < 4 &&(!(NumberOfMembers[req.params.ROOMCODE].constant) || Object.keys(rooms[req.params.ROOMCODE]).length < NumberOfMembers[req.params.ROOMCODE].members)){
         res.sendFile('ludo.html', { root: publicPath + '/html' });
     } else{
         res.statusCode = 404;

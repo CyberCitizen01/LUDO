@@ -486,11 +486,11 @@ function loadNewPiece(id){
 
 function iKill(id,pid){
     let boss = PLAYERS[id].myPieces[pid];
-    for(let i=0;i<4;i++){
+    for(let i=0;i<MYROOM.length;i++){
         for(let j=0;j<4;j++){
-            if(i!=id && boss.x == PLAYERS[i].myPieces[j].x && boss.y == PLAYERS[i].myPieces[j].y){
+            if(MYROOM[i]!=id && boss.x == PLAYERS[MYROOM[i]].myPieces[j].x && boss.y == PLAYERS[MYROOM[i]].myPieces[j].y){
                 if(!inAhomeTile(id,pid)){
-                    PLAYERS[i].myPieces[j].kill();
+                    PLAYERS[MYROOM[i]].myPieces[j].kill();
                     return 1;
                 }
             }
