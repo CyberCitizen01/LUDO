@@ -6,7 +6,7 @@ const PIECES = [];
 const colors = ["green","red","blue","yellow"];
 let MYROOM = [];
 let myid = -1;
-let chance = -1;
+let chance = Number(-1);
 var PLAYERS = {};
 
 var canvas = document.getElementById('theCanvas');
@@ -219,7 +219,9 @@ socket.on('connect',function(){
 
     socket.emit('fetch',room_code,function(data,id){
         MYROOM = data.sort(function(a, b){return a - b});
+        for(let i=0;i<MYROOM.length;i++){MYROOM[i] = +MYROOM[i]}
         myid = id;
+        console.log('19/6/21 fetched:',MYROOM,myid,chance);
         StartTheGame();
     });
 
@@ -227,7 +229,7 @@ socket.on('connect',function(){
     if(chance === myid){    
         document.querySelector('#randomButt').addEventListener('click',function(event){
         event.preventDefault();
-        console.log('chance is working');
+        console.log('19/6/21 randomButt clicked');
         styleButton(0);
         diceAction();
         });
@@ -240,12 +242,15 @@ socket.on('connect',function(){
             styleButton(1);
             outputMessage({Name:'your',id:data},4)
         }else{outputMessage({Name:USERNAMES[data]+"'s",id:data},4)}
-        chance = data;
+        chance = Number(data);
+        window.localStorage.setItem('chance',chance.toString());
     });
 
     socket.on('new-user-joined',function(data){
         MYROOM.push(data.id);
+        MYROOM = [...(new Set(MYROOM))];
         MYROOM.sort(function(a, b){return a - b});
+        for(let i=0;i<MYROOM.length;i++){MYROOM[i] = +MYROOM[i]}
         loadNewPiece(data.id);
         outputMessage({Name:USERNAMES[data.id],id:data.id},0);
         //stop timer,and hide modal.
@@ -264,7 +269,7 @@ socket.on('connect',function(){
 
     socket.on('resume',function(data){
         resume(data.id);
-        outputMessage({id:data.click,msg:`${USERNAMES[data.click]} has resumed the game without ${USERNAMES[data.id]}`},5)
+        data.id==data.click?outputMessage({id:data.id,msg:`Resumed the game without ${USERNAMES[id]}`},5):outputMessage({id:data.click,msg:`${USERNAMES[data.click]} has resumed the game without ${USERNAMES[data.id]}`},5)
     });
 
     socket.on('wait',function(data){
@@ -273,7 +278,7 @@ socket.on('connect',function(){
     });
 
     socket.on('rolled-dice',function(data){
-        data.id != myid?outputMessage({Name:USERNAMES[data.id],Num:data.num,id:data.id},1):outputMessage({Name: 'you', Num:data.num, id:data.id},1);
+        Number(data.id) != myid?outputMessage({Name:USERNAMES[data.id],Num:data.num,id:data.id},1):outputMessage({Name: 'you', Num:data.num, id:data.id},1);
     });
 
     socket.on('Thrown-dice',async function(data){
@@ -371,6 +376,7 @@ function styleButton(k){
 //simulates the action of dice and also chance rotation.
 function diceAction(){
     socket.emit('roll-dice',{room:room_code,id:myid},function(num){
+        console.log('19/6/21 dice rolled, got',num);
         let spirit = [];
         for(let i=0;i<4;i++){
             if(PLAYERS[myid].myPieces[i].pos>-1 && PLAYERS[myid].myPieces[i].pos + num <= 56){
@@ -381,7 +387,7 @@ function diceAction(){
         if(spirit.length!=0 || num==6){
             outputMessage('Click on a piece',3)
             canvas.addEventListener('click',function clickHandler(e){
-                console.log('clicked Random Button');
+                console.log('19/6/21 click event litener added to canvas element');
                 let Xp = e.clientX - e.target.getBoundingClientRect().left;
                 let Yp = e.clientY - e.target.getBoundingClientRect().top;
                 let myTurn = {
@@ -414,7 +420,7 @@ function diceAction(){
                 }
                 if(alert1){alert('You need to click on a piece of your color');}
             })
-        }else{socket.emit('chance',{room: room_code, nxt_id: chanceRotation(myid,num)});}
+        }else{socket.emit('chance',{room: room_code, nxt_id: chanceRotation(myid,num)});console.log('19/6/21 next chance');}
     })
 }
 
@@ -428,7 +434,7 @@ function StartTheGame(){
     document.getElementById('copy').innerHTML += copyText;
     if(MYROOM.length === 1){
         styleButton(1);
-        chance = myid;
+        chance = Number(myid);
     }else{
         styleButton(0);
     }
@@ -448,7 +454,27 @@ function loadAllPieces(){
                 for(let j=0;j<MYROOM.length;j++){
                     PLAYERS[MYROOM[j]] = new Player(MYROOM[j]);
                 }
-                allPlayerHandler();
+                if(window.localStorage.getItem('room')==room_code){
+                    console.log('19/6/21 yes my localStorage is for this room');
+                    if(window.localStorage.getItem('started')=='true'){
+                        console.log('19/6/21 yes i from this room');
+                        chance = Number(window.localStorage.getItem('chance'));
+                        let positions = JSON.parse(window.localStorage.getItem('positions'));
+                        for(let i=0;i<MYROOM.length;i++){
+                            for(let j=0;j<4;j++){
+                                console.log('19/6/21 yes room==room_code && started==true:i,j:',i,j);
+                                PLAYERS[MYROOM[i]].myPieces[j].x = Number(positions[MYROOM[i]][j].x);
+                                PLAYERS[MYROOM[i]].myPieces[j].y = Number(positions[MYROOM[i]][j].y);
+                                PLAYERS[MYROOM[i]].myPieces[j].pos = Number(positions[MYROOM[i]][j].pos);
+                            }
+                        }
+                        allPlayerHandler();
+                    }else{allPlayerHandler();}
+                }else{
+                    window.localStorage.clear();
+                    window.localStorage.setItem('room', room_code);
+                    allPlayerHandler();
+                }
             }
         }
         PIECES.push(img);
@@ -458,13 +484,16 @@ function loadAllPieces(){
 //rotate chance, required for the game
 function chanceRotation(id,num){
     if(num==6){
+        console.log('19/6/21 nxt 0 chance(num==6)',id);
         return id
     }
     else{
         let c = MYROOM[chance+1]
-        if(c!=undefined){
+        if(c){
+            console.log('19/6/21 nxt 1 chance(MYROOM[chance+1])',c,'\nMYROOM',MYROOM,'\nPrevious chance',chance);
             return c;
         }else{
+            console.log('19/6/21 nxt 2 chance(MYROOM[0])',MYROOM[0],'\nMYROOM',MYROOM,'\nPrevious chance',chance,'c:',c,'chance+1',chance+1,'MYROOM[chance+1]',MYROOM[chance+1]);
             return MYROOM[0];
         }
     }
@@ -476,11 +505,44 @@ function allPlayerHandler(){
     for(let i=0;i<Object.keys(PLAYERS).length;i++){
         PLAYERS[MYROOM[i]].draw();
     }
+    //Store chance, all 16 pos
+    //a boolean, for if this function has been called atleast once
+    let positions = {}
+    for(let i=0;i<MYROOM.length;i++){
+        positions[MYROOM[i]] = {}
+        for(let j=0;j<4;j++){
+            positions[MYROOM[i]][j] = {
+                x:PLAYERS[MYROOM[i]].myPieces[j].x,
+                y:PLAYERS[MYROOM[i]].myPieces[j].y,
+                pos:PLAYERS[MYROOM[i]].myPieces[j].pos
+            };
+        }
+    }
+    window.localStorage.setItem('started','true');
+    window.localStorage.setItem('chance',chance.toString());
+    window.localStorage.setItem('positions',JSON.stringify(positions));
 }
 
 //Load a new Player instance
 function loadNewPiece(id){
     PLAYERS[id] = new Player(id);
+    if(window.localStorage.getItem('room') == room_code){
+        console.log('19/6/21 yes I\'m from our room');
+        if(window.localStorage.getItem('started')){
+            //chance = Number(window.localStorage.getItem('chance'));
+            console.log('19/6/21 yes i have already started the game');
+            let positions = JSON.parse(window.localStorage.getItem('positions'));
+            if(positions[id]){
+                console.log(`yes I have some data for user of id: ${id} in my local storage\nIt is ${positions[id]}`);
+                for(let j=0;j<4;j++){
+                    console.log(`19/6/21 for ${id},${j}\nx:${Number(positions[id][j].x)}\ny:${Number(positions[id][j].y)}\npos:${Number(positions[id][j].pos)}`);
+                    PLAYERS[id].myPieces[j].x = Number(positions[id][j].x);
+                    PLAYERS[id].myPieces[j].y = Number(positions[id][j].y);
+                    PLAYERS[id].myPieces[j].pos = Number(positions[id][j].pos);
+                }
+            }
+        }
+    }
     allPlayerHandler();
 }
 
@@ -510,6 +572,7 @@ function inAhomeTile(id,pid){
 }
 
 function showModal(id){
+    window.localStorage.clear();
     document.getElementById("myModal-1").style.display = "block";
     document.getElementById("win-win").innerHTML = `The winner is ${USERNAMES[id]}`
 
@@ -556,7 +619,10 @@ function resumeHandler(id){
             id:id,
             click:myid
         },function(){
-            outputMessage({id:myid,msg:`You have resumed the game without ${USERNAMES[id]}`},5)
+            outputMessage({id:myid,msg:`You have resumed the game without ${USERNAMES[id]}`},5);
+            if(chance==id){
+                socket.emit('chance',{room: room_code, nxt_id: chanceRotation(id,0)});
+            }
         });
 
     };
@@ -578,7 +644,12 @@ function resumeHandler(id){
             socket.emit('resume',{
                 room:room_code,
                 id:id,
-                click:myid
+                click:id
+            },function(){
+                outputMessage({id:id,msg:`Resumed the game without ${USERNAMES[id]}`},5);
+                if(chance==id){
+                    socket.emit('chance',{room: room_code, nxt_id: chanceRotation(id,0)});
+                }
             });
 
         }
