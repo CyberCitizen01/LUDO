@@ -82,7 +82,7 @@ body {
     font-size: 14px;
 }
 
-.copy-content #copy-btn {
+/* .copy-content #copy-btn {
     background-image: linear-gradient(to bottom right, red, yellow);
     color: white;
     font-size: 20px;
@@ -96,7 +96,7 @@ body {
     border: 1px solid white;
     cursor: pointer;
     box-shadow: 0 12px 16px 0 rgba(0,0,0,0.24), 0 17px 50px 0 rgba(0,0,0,0.19);
-}
+} */
 
 .tooltip {
     position: relative;
@@ -258,7 +258,7 @@ body {
     margin-top: 20px;
 }
 
-#randomButt {
+#randomButt, #copy-btn, #RESUME, #WAIT {
     background-image: linear-gradient(to bottom right, red, yellow);
     color: white;
     font-size: 20px;
@@ -268,7 +268,7 @@ body {
     box-shadow: 0 6px 8px 0 rgba(0,0,0,0.14), 0 17px 50px 0 rgba(0,0,0,0.09);
 }
 
-#randomButt:hover {
+#randomButt:hover, #copy-btn:hover, #RESUME:hover, #WAIT {
     border: 1px solid white;
     cursor: pointer;
     box-shadow: 0 12px 16px 0 rgba(0,0,0,0.24), 0 17px 50px 0 rgba(0,0,0,0.19);
@@ -285,7 +285,7 @@ body {
     text-align: center;
 }
 
-#color-message-span1{
+#color-message-span1,#theOneWhoLeft{
     font-family: 'ZCOOL KuaiLe', cursive;
 }
 
