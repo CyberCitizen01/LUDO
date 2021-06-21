@@ -390,7 +390,7 @@ function diceAction(){
                 console.log('19/6/21 click event litener added to canvas element');
                 let Xp = e.clientX - e.target.getBoundingClientRect().left;
                 let Yp = e.clientY - e.target.getBoundingClientRect().top;
-                let myTurn = {
+                let playerObj = {
                     room: room_code,
                     id: myid,
                     num: num
@@ -401,9 +401,9 @@ function diceAction(){
                     if(Xp-PLAYERS[myid].myPieces[i].x<45 && Xp-PLAYERS[myid].myPieces[i].x>0 && Yp-PLAYERS[myid].myPieces[i].y<45 && Yp-PLAYERS[myid].myPieces[i].y>0){
                         console.log(i,'okokokok');
                         if((spirit.includes(i) || num==6) && PLAYERS[myid].myPieces[i].pos+num <=56){
-                            myTurn['pid'] = i;
-                            console.log(myTurn);
-                            socket.emit('random',myTurn, function(data){
+                            playerObj['pid'] = i;
+                            console.log(playerObj);
+                            socket.emit('random',playerObj, function(data){
                                 styleButton(0);
                                 console.log('random acknowledged');
                                 socket.emit('chance',{room: room_code, nxt_id: chanceRotation(myid,data)});
@@ -460,7 +460,9 @@ function loadAllPieces(){
                         console.log('19/6/21 yes i from this room');
                         chance = Number(window.localStorage.getItem('chance'));
                         let positions = JSON.parse(window.localStorage.getItem('positions'));
+                        let win = JSON.parse(window.localStorage.getItem('win'));
                         for(let i=0;i<MYROOM.length;i++){
+                            PLAYERS[MYROOM[i]].win = Number(MYROOM[i]);
                             for(let j=0;j<4;j++){
                                 console.log('19/6/21 yes room==room_code && started==true:i,j:',i,j);
                                 PLAYERS[MYROOM[i]].myPieces[j].x = Number(positions[MYROOM[i]][j].x);
@@ -508,8 +510,10 @@ function allPlayerHandler(){
     //Store chance, all 16 pos
     //a boolean, for if this function has been called atleast once
     let positions = {}
+    let win = {}
     for(let i=0;i<MYROOM.length;i++){
         positions[MYROOM[i]] = {}
+        win[MYROOM[i]] = PLAYERS[MYROOM[i]].win
         for(let j=0;j<4;j++){
             positions[MYROOM[i]][j] = {
                 x:PLAYERS[MYROOM[i]].myPieces[j].x,
@@ -521,6 +525,7 @@ function allPlayerHandler(){
     window.localStorage.setItem('started','true');
     window.localStorage.setItem('chance',chance.toString());
     window.localStorage.setItem('positions',JSON.stringify(positions));
+    window.localStorage.setItem('win',JSON.stringify(win));
 }
 
 //Load a new Player instance
@@ -532,8 +537,10 @@ function loadNewPiece(id){
             //chance = Number(window.localStorage.getItem('chance'));
             console.log('19/6/21 yes i have already started the game');
             let positions = JSON.parse(window.localStorage.getItem('positions'));
+            let win = JSON.parse(window.localStorage.getItem('win'));
             if(positions[id]){
                 console.log(`yes I have some data for user of id: ${id} in my local storage\nIt is ${positions[id]}`);
+                PLAYERS[id].win = Number(win[id]);
                 for(let j=0;j<4;j++){
                     console.log(`19/6/21 for ${id},${j}\nx:${Number(positions[id][j].x)}\ny:${Number(positions[id][j].y)}\npos:${Number(positions[id][j].pos)}`);
                     PLAYERS[id].myPieces[j].x = Number(positions[id][j].x);

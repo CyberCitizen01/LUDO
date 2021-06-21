@@ -1,25 +1,25 @@
-const path = require('path');
+const {join} = require('path');
 const express = require('express');
-const http = require('http');
+const {createServer} = require('http');
 const socketIO = require('socket.io');
 
+const {PORT} = require('./config/config');
+
+const rootRouter = require('./routes/rootRouter')
+const ludoRouter = require('./routes/ludoRouter')
+
+let {rooms,NumberOfMembers,win} = require('./models/model');
+
 const app = express();
-const server = http.createServer(app);
+const server = createServer(app);
 const io = socketIO(server, {
     cors: {
       origin: '*'
     }});
 
-const publicPath = path.join(__dirname, '../public');
-const port = process.env.PORT || 3000;
-
-app.use(express.static(publicPath));
+app.use(express.static(join(__dirname, 'public/')));
 app.use(express.urlencoded({ extended: true }));
-
-let rooms = {};
-let NumberOfMembers = {};
-let win = {};
-
+app.enable('trust proxy');
 
 //
 ///sockets
@@ -58,17 +58,28 @@ nsp.on('connection',(socket)=>{
         nsp.to(data.room).emit('is-it-your-chance',data.nxt_id);
     });
 
-    socket.on('random',(data,cb)=>{
-        if(data['num'] != rooms[data.room][data.id]['num']){
+    socket.on('random',(playerObj,cb)=>{
+        // playerObj ={
+        //     room: room_code,
+        //     id: myid,
+        //     pid: pid,
+        //     num: temp
+        // }
+        if(playerObj['num'] != rooms[playerObj.room][playerObj.id]['num']){
             console.log('Someone is trying to cheat!');
         }
-        data['num'] = rooms[data.room][data.id]['num']
-        nsp.to(data.room).emit('Thrown-dice', data);
-        cb(data['num']);
+        playerObj['num'] = rooms[playerObj.room][playerObj.id]['num']
+        nsp.to(playerObj.room).emit('Thrown-dice', playerObj);
+        cb(playerObj['num']);
     });
 
     socket.on('WON',(OBJ)=>{
         if(validateWinner(OBJ,socket)){
+            delete win[OBJ.room];
+            delete NumberOfMembers[OBJ.room];
+            if(rooms[OBJ.room]){
+                delete rooms[OBJ.room];
+            }
             nsp.to(OBJ.room).emit('winner',OBJ.id);
         }
     });
@@ -97,66 +108,8 @@ nsp.on('connection',(socket)=>{
 
 
 //
-///Routes management
-//
-app.get('/', (req,res)=>{
-    res.sendFile('index.html', { root: publicPath + '/html' });
-});
-
-app.post('/',(req,res)=>{
-    if(req.body.action_to_do === 'create'){
-        let p0th = randomPath()
-        rooms[p0th] = {};
-        win[p0th] = {};
-        NumberOfMembers[p0th] = {constant:false,members:4};
-        res.redirect(301, 'ludo/' + p0th);
-    } else if(req.body.action_to_do === 'join'){
-            if(Object.keys(rooms).includes(req.body.roomcode)){
-                res.redirect(301, 'ludo/' + req.body.roomcode);
-            } else{
-                res.statusCode = 404;
-                res.end('404!');
-            }
-        } else{
-            res.statusCode = 404;
-            res.end('404!');
-        }
-});
-
-app.get('/ludo', (req,res)=>{
-    res.redirect(301,'/');
-});
-
-app.get('/ludo/:ROOMCODE', (req,res)=>{
-    if(Object.keys(rooms).includes(req.params.ROOMCODE) && Object.keys(req.query).length===0  &&  Object.keys(rooms[req.params.ROOMCODE]).length < 4 &&(!(NumberOfMembers[req.params.ROOMCODE].constant) || Object.keys(rooms[req.params.ROOMCODE]).length < NumberOfMembers[req.params.ROOMCODE].members)){
-        res.sendFile('ludo.html', { root: publicPath + '/html' });
-    } else{
-        res.statusCode = 404;
-        res.end('404!:(\nThis is either not a valid Room Code or The room is filled up, Go to home and create a room!');
-    }
-});
-
-app.use(function (req, res) {
-    res.statusCode = 404;
-    res.end('404!');
-});
-
-server.listen(port,()=>{
-    console.log(`The server has started working on http://localhost:${port}`);
-})
-
-
-//
 ///CUSTOM FUNCTIONS
 //
-
-//to generate unique rooms
-function randomPath(){
-    let randomPath = Math.random().toString(36).substr(2, 6);
-    if(!Object.keys(rooms).includes(randomPath)){
-        return randomPath;
-    } else{ randomPath(); }
-};
 
 //to randomise the color a player can get when he 'fetch'es.
 function generate_member_id(s_id,rc){
@@ -192,6 +145,7 @@ function deleteThisid(id){
     
 }
 
+//to validate a winner, by comparing the data provided by all 4
 function validateWinner(OBJ,socket){
     win[OBJ.room][OBJ.player] = {o:OBJ,s:socket.id};
     if(()=>{
@@ -214,32 +168,16 @@ function validateWinner(OBJ,socket){
     
 }
 
-// rooms ={
-//     'ax0fed':{
-//                 0:{'sid':'akjldsaa',num:0},
-//                 1:{'sid':'laiukfjh',num:0},
-//                 2:{'sid':'asdlksfh',num:0},
-//                 3:{'sid':'ufhdjaad',num:0}
-//              },
-//     'ghty12':{
-//                 0:{'sid':'asdghfad',num:0},
-//                 1:{'sid':'hydgdjdj',num:0},
-//                 2:{'sid':'kujhsgdf',num:0},
-//                 3:{'sid':'ghhgdsyl',num:0}
-//              },
-// }
 //
-// message ={
-//     'ax0fed':{
-//                 hasTheGameAlreadyStarted:false,
-//                 allXY:{}
-//}
+///Routes management
 //
-// data = numb;
-//
-// playerObj ={
-//     room: room_code,
-//     id: myid,
-//     pid: pid,
-//     num: temp
-// }
+app.use('/', rootRouter);
+app.use('/ludo', ludoRouter);
+app.use(function (req, res) {
+    res.statusCode = 404;
+    res.end('404!');
+});
+
+server.listen(PORT,()=>{
+    console.log(`The server has started working on http://localhost:${PORT}`);
+});
