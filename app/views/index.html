@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HOME</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Audiowide|Sofia">
+    <link rel="stylesheet" href="../style/index.css">
+    <link rel="apple-touch-icon" sizes="180x180" href="../images/favicon/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="../images/favicon/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="../images/favicon/favicon-16x16.png">
+    <link rel="manifest" href="../images/favicon/site.webmanifest">
+    <meta name="msapplication-config" content="../images/favicon/browserconfig.xml" />
+    <meta name="msapplication-TileColor" content="000000">
+    <meta name="theme-color" content="000000">
+</head>
+<body>
+    <div class="navBar">
+        <a href="">HOME</a>
+        <a onclick="register()">LUDO</a>
+        <a href="about">ABOUT</a>
+    </div>
+
+    <div id="myModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <form autocomplete="off" name="TheForm" style="position: relative; top: 0px;" action="/" method="POST">
+                <label for="JOIN">JOIN</label> <input type="radio" name="action_to_do" id="JOIN" value="join" required="required" onclick="ShowHideDiv()">
+                <label for="CREATE">CREATE</label> <input type="radio" name="action_to_do" id="CREATE" value="create" required="required" onclick="ShowHideDiv()">
+                
+            <br>
+            <div id="room_code" style="display: none;">
+                <label for="joinroom">Your secret Room code</label>
+                <input type="text" name="roomcode" id="roomcodeID" size="6" pattern="[A-Za-z0-9]{6}" title="Six letter room code">
+            </div>
+            <button type="submit" id="start">PLAY</button>
+            </form>
+        </div>  
+    </div>
+
+    <div class="card">
+        <div class="heading">
+            <h2>LUDO - A 4 Player Game</h2>
+        </div>
+        <div class="content">
+            <p>This is a project based on Node.js and socket.io. It is a 4 player (4 is maximum) game, that basically everyone knows. Making this gives a good hold over the technoligies or framework used.</p>
+        </div>
+        <div class="playButton">
+            <button type="button" id="start" onclick="register()">PLAY</button>
+        </div>
+    </div>
+    <script src="../js/index.js"></script>
+</body>
+</html>

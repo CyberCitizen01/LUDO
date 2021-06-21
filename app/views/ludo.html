@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LUDO</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Audiowide|Sofia">
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Slab&family=ZCOOL+KuaiLe&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../style/ludo.css">
+    <script src='../../socket.io/socket.io.js'></script>
+    <link rel="apple-touch-icon" sizes="180x180" href="../images/favicon/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="../images/favicon/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="../images/favicon/favicon-16x16.png">
+    <link rel="manifest" href="../images/favicon/site.webmanifest">
+    <meta name="msapplication-config" content="../images/favicon/browserconfig.xml" />
+    <meta name="msapplication-TileColor" content="000000">
+    <meta name="theme-color" content="000000">
+</head>
+<body>
+    <div class="navBar">
+        <a href="">HOME</a>
+        <a href="">LUDO</a>
+        <a href="about">ABOUT</a>
+        <div class="copy-wrapper">
+            <h3 id="my-name" onclick="copy(event)">&#10024;  </h3>
+            <div class="copy-content">
+                <h3>Invite your friends!</h3>
+                <textarea id="copy" cols="30" rows="6">Hey dude let's play a LUDO match &#x1f3b2;</textarea><br>
+                <div class="tooltip">
+                    <button id="copy-btn" onclick="copyhandler()" onmouseout="outFunc()">
+                        <span class="tooltiptext" id="myTooltip">copy to clipboard</span>
+                        <!-- COPY -->
+                        <img src="../images/icons/clipboard.png" alt="COPY" style="height: 20px; width: 18px;">
+                    </button>
+                </div>
+                <div class="tooltip">
+                    <button id="copy-btn" onclick="copyhandlerLink()" onmouseout="outFuncLink()">
+                        <span class="tooltiptext" id="myTooltipLink">copy room link to the clipboard</span>
+                        <!-- COPY -->
+                        <img src="../images/icons/copy-link.png" alt="COPY" style="height: 20px; width: 18px;">
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="heading-tile">
+        <h2>LUDO - A 4 Player Game</h2>
+    </div>
+    
+    <div id="myModal-1" class="modal">
+        <div class="modal-content">
+                <h3 id="win-win"></h3>
+                <button id="HOME" onclick='window.location.replace("/");'>HOME</button>
+            <br>
+        </div>  
+    </div>
+    <div id="myModal-2" class="modal">
+        <div class="modal-content" style="margin: 15% auto;">
+                <h3 id="resume">Resume the game without <span id="theOneWhoLeft"></span><span id="seconds"> in 10</span>.</h3>
+                <button id="RESUME" >RESUME</button>
+                <button id="WAIT" >WAIT</button>
+            <br>
+        </div>  
+    </div>
+
+    <div class="gameWrapper">
+        <div class="gameBoard">
+            <img src="../images/LUDO_BOARD.svg" alt="THIS IS AN IMAGE" class="ludoImg" >
+            <canvas class="gameCanvas" id="theCanvas"></canvas>
+        </div>
+        <div class="diceBoard">
+            <div class="msgBoard">
+                <div class="messageFromServer">
+                    <strong>LET US START THE GAME!!!</strong>
+                </div>
+            
+            </div>
+            <div class="goButt">
+                <button id="randomButt" style="text-align: right;">GO</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/ludo.js"></script>
+</body>
+</html>
