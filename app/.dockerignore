@@ -1,6 +1,4 @@
 node_modules
 Dockerfile
-.dockerignore
-.git
-.gitignore
 test
+.dockerignore

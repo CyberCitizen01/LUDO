@@ -1,0 +1,16 @@
+version: "3"
+services:
+    nginx:
+        ports:
+            - "3000:80"
+    game_app:
+        build:
+            context: ./app/
+            args:
+                NODE_ENV: development
+        volumes:
+            - ./app/:/app:ro
+            - /app/node_modules
+        environment:
+            - NODE_ENV=development
+        command: npm run develop
