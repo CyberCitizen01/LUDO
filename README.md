@@ -2,7 +2,7 @@
 A multi-player LUDO game, made with `node.js`, `socket.io` and `Vanilla Javascript`.
 ___
 ![GitHub package.json dependency version (prod)](https://img.shields.io/badge/dynamic/json?color=green&label=socket.io&query=dependencies[%22socket.io%22]&url=https%3A%2F%2Fraw.githubusercontent.com%2FCyberCitizen01%2FLUDO%2Fmaster%2Fapp%2Fpackage.json&logo=socketdotio&style=flat-square)
-![GitHub package.json dependency version (prod)](https://img.shields.io/badge/dynamic/json?color=green&label=socket.io&query=dependencies[%22express%22]&url=https%3A%2F%2Fraw.githubusercontent.com%2FCyberCitizen01%2FLUDO%2Fmaster%2Fapp%2Fpackage.json&logo=express&style=flat-square)<br>
+![GitHub package.json dependency version (prod)](https://img.shields.io/badge/dynamic/json?color=green&label=express&query=dependencies[%22express%22]&url=https%3A%2F%2Fraw.githubusercontent.com%2FCyberCitizen01%2FLUDO%2Fmaster%2Fapp%2Fpackage.json&logo=express&style=flat-square)<br>
 ![Website](https://img.shields.io/website?down_color=red&down_message=INACTIVE&label=DEPLOYMENT&logo=heroku&logoColor=green&style=flat-square&up_color=blue&up_message=ACTIVE&url=https%3A%2F%2Fthe-ludo-game.herokuapp.com)
 ![GitHub last commit](https://img.shields.io/github/last-commit/CyberCitizen01/LUDO?logo=github&style=flat-square)
 ___
