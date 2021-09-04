@@ -33,7 +33,7 @@ You can either build the app by cloning the repository or by pulling the Docker 
   
   - Pull the [image](https://hub.docker.com/r/cybercitizen01/the-ludo-game) and run:
     ```sh
-    docker run --name the-lodu-game -p 3000:3000 cybercitizen01/the-ludo-game
+    docker run --name the-ludo-game -p 3000:3000 cybercitizen01/the-ludo-game
     ```
     Head over to http://localhost:3000/, to see the Home Page.
   - The above command attaches the shell of the container to your terminal, and thus when you hit ^C the container stops automatically. To run the container in detached mode:
