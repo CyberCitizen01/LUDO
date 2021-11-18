@@ -4,10 +4,11 @@ services:
         ports:
             - "80:80"
     game_app:
+        image: cybercitizen01/the-ludo-game
         build:
-            context: .
+            context: ./app/
             args:
                 NODE_ENV: production
         environment:
             - NODE_ENV=production
-        command: node index.js
+        command: node server.js
