@@ -20,7 +20,7 @@
   "homepage": "https://github.com/CyberCitizen01/LUDO#readme",
   "dependencies": {
     "express": "^4.17.1",
-    "socket.io": "^4.4.0"
+    "socket.io": "^4.5.3"
   },
   "engines": {
     "node": "14.x"
